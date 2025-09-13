@@ -22,6 +22,7 @@ class CV_Dossier_Context {
 
     private function __construct() {
         register_activation_hook( __FILE__, [ $this, 'activate' ] );
+        register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall' ] );
         add_action( 'init', [ $this, 'register_cpts' ] );
         add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
         add_action( 'save_post', [ $this, 'save_meta' ] );
@@ -58,6 +59,26 @@ class CV_Dossier_Context {
         ) {$charset_collate};";
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
+    }
+
+    public static function uninstall() {
+        // Only remove data if user explicitly chooses to
+        if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) return;
+        
+        global $wpdb;
+        
+        // Remove custom tables (optional - some plugins keep data)
+        // Uncomment the line below if you want to remove the table on uninstall
+        // $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}" . self::TABLE );
+        
+        // Remove all plugin options and post meta
+        delete_option( 'cv_dossier_version' );
+        
+        // Remove all meta data for dossiers and events
+        $wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_cv_%'" );
+        
+        // Clean up any remaining plugin data
+        wp_cache_flush();
     }
 
     public function register_cpts() {
@@ -155,18 +176,39 @@ class CV_Dossier_Context {
 
         // Dossier fields
         if ( get_post_type($post_id) === 'cv_dossier' ) {
-            update_post_meta( $post_id, '_cv_status', sanitize_text_field( $_POST['cv_status'] ?? 'open' ) );
-            update_post_meta( $post_id, '_cv_score',  intval( $_POST['cv_score'] ?? 0 ) );
+            $status = sanitize_text_field( $_POST['cv_status'] ?? 'open' );
+            $status = in_array( $status, ['open', 'closed'] ) ? $status : 'open';
+            
+            $score = intval( $_POST['cv_score'] ?? 0 );
+            $score = max( 0, min( 100, $score ) ); // Ensure score is between 0-100
+            
+            update_post_meta( $post_id, '_cv_status', $status );
+            update_post_meta( $post_id, '_cv_score',  $score );
             update_post_meta( $post_id, '_cv_facts',  wp_kses_post( $_POST['cv_facts'] ?? '' ) );
             update_post_meta( $post_id, '_cv_actors', sanitize_text_field( $_POST['cv_actors'] ?? '' ) );
         }
 
         // Event fields
         if ( get_post_type($post_id) === 'cv_dossier_event' ) {
-            update_post_meta( $post_id, '_cv_date',  preg_replace('/[^0-9\-]/','', $_POST['cv_date'] ?? '' ) );
+            $date = preg_replace('/[^0-9\-]/', '', $_POST['cv_date'] ?? '' );
+            // Validate date format (basic check)
+            if ( $date && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                $date = '';
+            }
+            
+            $lat = sanitize_text_field( $_POST['cv_lat'] ?? '' );
+            $lng = sanitize_text_field( $_POST['cv_lng'] ?? '' );
+            
+            // Validate coordinates (basic check)
+            if ( $lat && ! is_numeric( $lat ) ) $lat = '';
+            if ( $lng && ! is_numeric( $lng ) ) $lng = '';
+            if ( $lat && ( $lat < -90 || $lat > 90 ) ) $lat = '';
+            if ( $lng && ( $lng < -180 || $lng > 180 ) ) $lng = '';
+            
+            update_post_meta( $post_id, '_cv_date',  $date );
             update_post_meta( $post_id, '_cv_place', sanitize_text_field( $_POST['cv_place'] ?? '' ) );
-            update_post_meta( $post_id, '_cv_lat',   sanitize_text_field( $_POST['cv_lat'] ?? '' ) );
-            update_post_meta( $post_id, '_cv_lng',   sanitize_text_field( $_POST['cv_lng'] ?? '' ) );
+            update_post_meta( $post_id, '_cv_lat',   $lat );
+            update_post_meta( $post_id, '_cv_lng',   $lng );
             // parent
             $parent = isset($_POST['cv_parent']) ? intval($_POST['cv_parent']) : 0;
             wp_update_post([ 'ID'=>$post_id, 'post_parent'=>$parent ]);
@@ -389,46 +431,3 @@ class CV_Dossier_Context {
 }
 
 CV_Dossier_Context::init();
-
-/** ===== CSS minimal (inline build) ===== */
-add_action('plugins_loaded', function(){
-    $css = ".cv-card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:16px 0;background:#fff}
-.cv-card__head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.cv-badge{padding:4px 8px;border-radius:999px;font-size:12px;background:#eee}
-.cv-badge.open{background:#e6f7e6}
-.cv-badge.closed{background:#ffecec}
-.cv-score{font-weight:700}
-.cv-facts{margin:8px 0 0 18px}
-.cv-card__cta{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
-.cv-btn{display:inline-block;padding:8px 12px;border-radius:8px;border:1px solid #ddd;text-decoration:none}
-.cv-follow input[type=email]{padding:8px;border:1px solid #ccc;border-radius:6px}
-.cv-timeline{border-left:3px solid #eee;padding-left:12px}
-.cv-tl-item{margin:12px 0}
-.cv-tl-date{font-weight:700;margin-bottom:4px}
-.cv-map{border:1px solid #eee;border-radius:12px}";
-    // write to plugin dir
-    $css_dir = plugin_dir_path(__FILE__) . 'css';
-    if ( ! file_exists( $css_dir ) ) @mkdir( $css_dir );
-    @file_put_contents( $css_dir . '/cv-dossier.css', $css );
-    $js = "jQuery(function($){
-        $(document).on('submit','.cv-follow',function(e){
-            e.preventDefault();
-            var $f=$(this), data={
-                action:'cv_follow_dossier',
-                nonce:CVDossier.nonce,
-                email:$f.find('input[name=email]').val(),
-                dossier_id:$f.find('input[name=dossier_id]').val()
-            };
-            $.post(CVDossier.ajax, data, function(resp){
-                if(resp && resp.success){
-                    $f.replaceWith('<span class=\"cv-ok\">Iscritto ✔</span>');
-                } else {
-                    alert((resp && resp.data && resp.data.message) ? resp.data.message : 'Errore');
-                }
-            });
-        });
-    });";
-    $js_dir = plugin_dir_path(__FILE__) . 'js';
-    if ( ! file_exists( $js_dir ) ) @mkdir( $js_dir );
-    @file_put_contents( $js_dir . '/cv-dossier.js', $js );
-});
