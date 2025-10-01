@@ -287,6 +287,13 @@ class CV_Dossier_Context {
             else delete_post_meta( $post_id, '_cv_dossier_id' );
 
             if ( isset( $_POST['cv_map_markers_present'] ) ) {
+                $map_enabled = isset( $_POST['cv_map_enabled'] ) ? '1' : '0';
+                update_post_meta( $post_id, '_cv_map_enabled', $map_enabled );
+
+                $map_height = isset( $_POST['cv_map_height'] ) ? wp_unslash( $_POST['cv_map_height'] ) : '';
+                $map_height = $this->sanitize_map_height( $map_height );
+                update_post_meta( $post_id, '_cv_map_height', $map_height );
+
                 $raw_markers = [];
                 if ( isset( $_POST['cv_map_markers'] ) && is_array( $_POST['cv_map_markers'] ) ) {
                     $raw_markers = wp_unslash( $_POST['cv_map_markers'] );
@@ -384,8 +391,11 @@ class CV_Dossier_Context {
                 $needs_assets = true;
             }
 
-            $markers = get_post_meta( $post_id, '_cv_map_markers', true );
-            if ( is_array( $markers ) && ! empty( $markers ) ) {
+            $markers      = get_post_meta( $post_id, '_cv_map_markers', true );
+            $map_enabled  = get_post_meta( $post_id, '_cv_map_enabled', true );
+            $show_map     = ( '0' !== $map_enabled );
+
+            if ( $show_map && is_array( $markers ) && ! empty( $markers ) ) {
                 $needs_assets  = true;
                 $needs_leaflet = true;
             }
@@ -507,7 +517,14 @@ class CV_Dossier_Context {
             $markers = [];
         }
 
+        $map_enabled_meta = get_post_meta( $post->ID, '_cv_map_enabled', true );
+        $is_map_enabled   = ( '0' !== $map_enabled_meta );
+        $map_height_meta  = get_post_meta( $post->ID, '_cv_map_height', true );
+        $map_height       = $this->sanitize_map_height( $map_height_meta );
+
         echo '<input type="hidden" name="cv_map_markers_present" value="1" />';
+        echo '<p><label><input type="checkbox" name="cv_map_enabled" value="1"' . checked( true, $is_map_enabled, false ) . ' /> ' . esc_html__( 'Mostra la mappa nell&#39;articolo', 'cv-dossier' ) . '</label></p>';
+        echo '<p><label for="cv_map_height">' . esc_html__( 'Altezza della mappa (px)', 'cv-dossier' ) . '</label> <input type="number" id="cv_map_height" name="cv_map_height" class="small-text" min="240" max="800" step="10" value="' . esc_attr( $map_height ) . '" /> <span class="description">' . esc_html__( 'Imposta un valore tra 240 e 800 pixel. Predefinito: 360.', 'cv-dossier' ) . '</span></p>';
         echo '<p class="description">' . esc_html__( 'Aggiungi dei punti sulla mappa indicando coordinate (latitudine e longitudine), contenuti descrittivi e, facoltativamente, un&#39;immagine. I lettori potranno aprire la foto a schermo intero.', 'cv-dossier' ) . '</p>';
         echo '<div id="cv-map-markers" class="cv-map-markers">';
 
@@ -619,6 +636,14 @@ class CV_Dossier_Context {
             return '';
         }
 
+        $map_enabled = get_post_meta( $post_id, '_cv_map_enabled', true );
+        if ( '0' === $map_enabled ) {
+            return '';
+        }
+
+        $map_height_meta = get_post_meta( $post_id, '_cv_map_height', true );
+        $map_height      = $this->sanitize_map_height( $map_height_meta );
+
         $prepared = [];
         foreach ( $markers as $marker ) {
             if ( ! isset( $marker['lat'], $marker['lng'] ) ) {
@@ -650,8 +675,7 @@ class CV_Dossier_Context {
 
         $map_id           = 'cv_post_map_' . $post_id . '_' . wp_generate_password( 6, false );
         $instructions_id  = $map_id . '_instructions';
-        $unlock_text      = __( 'Attiva la mappa per lo zoom e la navigazione', 'cv-dossier' );
-        $instructions_txt = __( 'Tocca o clicca sulla mappa per attivare lo zoom e la navigazione. Su dispositivi touch usa due dita per muoverti sulla mappa. Premi Tab per tornare al contenuto successivo.', 'cv-dossier' );
+        $instructions_txt = __( 'Trascina la mappa per esplorare i punti di interesse. Lo zoom è disabilitato per mantenere la panoramica.', 'cv-dossier' );
         $prepared_json    = wp_json_encode( $prepared );
         $json_failed      = ( false === $prepared_json );
 
@@ -661,7 +685,7 @@ class CV_Dossier_Context {
 
         ob_start();
         ?>
-        <div class="cv-map cv-map--article" id="<?php echo esc_attr( $map_id ); ?>" role="region" aria-label="<?php echo esc_attr__( 'Mappa degli approfondimenti', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>" data-unlock-text="<?php echo esc_attr( $unlock_text ); ?>"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> tabindex="0"></div>
+        <div class="cv-map cv-map--article" id="<?php echo esc_attr( $map_id ); ?>" role="region" aria-label="<?php echo esc_attr__( 'Mappa degli approfondimenti', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>" style="height:<?php echo esc_attr( $map_height ); ?>px;min-height:<?php echo esc_attr( $map_height ); ?>px;"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> tabindex="0"></div>
         <span id="<?php echo esc_attr( $instructions_id ); ?>" class="cv-sr-only"><?php echo esc_html( $instructions_txt ); ?></span>
         <?php if ( $json_failed ) :
             return ob_get_clean();
@@ -673,7 +697,6 @@ class CV_Dossier_Context {
             if (!el) { return; }
             var attempts = 0;
             var maxAttempts = 30;
-            var unlockText = el.getAttribute('data-unlock-text') || '';
             var instructionId = el.getAttribute('aria-describedby') || '';
             function init(){
                 if (typeof L === 'undefined') {
@@ -685,7 +708,15 @@ class CV_Dossier_Context {
                     setTimeout(init, 200);
                     return;
                 }
-                var map = L.map(el, { scrollWheelZoom: false, tap: true });
+                var map = L.map(el, {
+                    scrollWheelZoom: false,
+                    tap: false,
+                    touchZoom: false,
+                    doubleClickZoom: false,
+                    boxZoom: false,
+                    keyboard: false,
+                    zoomControl: false
+                });
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                 }).addTo(map);
@@ -715,94 +746,13 @@ class CV_Dossier_Context {
                     map.setView([42.416, 12.105], 11);
                 }
 
-                var scrollEnabled = false;
-                function enableScroll(){
-                    if (!scrollEnabled) {
-                        map.scrollWheelZoom.enable();
-                        scrollEnabled = true;
+                if (instructionId) {
+                    var instructionEl = document.getElementById(instructionId);
+                    if (instructionEl) {
+                        instructionEl.setAttribute('aria-hidden', 'false');
                     }
                 }
 
-                function disableScroll(){
-                    if (scrollEnabled) {
-                        map.scrollWheelZoom.disable();
-                        scrollEnabled = false;
-                    }
-                }
-
-                var unlockButton = null;
-                function removeUnlockButton() {
-                    if (!unlockButton) {
-                        return;
-                    }
-
-                    if (typeof unlockButton.remove === 'function') {
-                        unlockButton.remove();
-                    } else if (unlockButton.parentNode) {
-                        unlockButton.parentNode.removeChild(unlockButton);
-                    }
-
-                    unlockButton = null;
-                }
-
-                if (unlockText) {
-                    unlockButton = document.createElement('button');
-                    unlockButton.type = 'button';
-                    unlockButton.className = 'cv-map__unlock';
-                    if (instructionId) {
-                        unlockButton.setAttribute('aria-describedby', instructionId);
-                    }
-                    unlockButton.textContent = unlockText;
-                    unlockButton.addEventListener('click', function() {
-                        enableScroll();
-                        removeUnlockButton();
-                        el.focus();
-                    });
-                    el.appendChild(unlockButton);
-                }
-
-                el.addEventListener('click', function(){
-                    removeUnlockButton();
-                    enableScroll();
-                });
-                el.addEventListener('focus', function(){
-                    removeUnlockButton();
-                    enableScroll();
-                });
-                el.addEventListener('blur', function(){
-                    disableScroll();
-                });
-                el.addEventListener('mouseenter', function(){
-                    if (window.matchMedia('(pointer: coarse)').matches) {
-                        return;
-                    }
-                    removeUnlockButton();
-                    enableScroll();
-                });
-                el.addEventListener('mouseleave', function(){
-                    disableScroll();
-                });
-                el.addEventListener('keydown', function(event){
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        removeUnlockButton();
-                        enableScroll();
-                    }
-                });
-                el.addEventListener('touchstart', function(){
-                    removeUnlockButton();
-                    enableScroll();
-                }, { passive: true });
-                el.addEventListener('touchend', function(){
-                    setTimeout(disableScroll, 200);
-                }, { passive: true });
-                if (unlockButton) {
-                    unlockButton.addEventListener('focus', function(){
-                        unlockButton.classList.add('is-focused');
-                    });
-                    unlockButton.addEventListener('blur', function(){
-                        unlockButton.classList.remove('is-focused');
-                    });
-                }
                 window.addEventListener('resize', function(){
                     setTimeout(function(){ map.invalidateSize(); }, 200);
                 });
@@ -889,6 +839,28 @@ class CV_Dossier_Context {
         }
 
         return $url;
+    }
+
+    private function sanitize_map_height( $value ) {
+        if ( is_array( $value ) ) {
+            $value = '';
+        }
+
+        $value = intval( $value );
+
+        if ( $value <= 0 ) {
+            $value = 360;
+        }
+
+        if ( $value < 240 ) {
+            $value = 240;
+        }
+
+        if ( $value > 800 ) {
+            $value = 800;
+        }
+
+        return $value;
     }
 
     public function sc_context( $atts ) {
@@ -1021,8 +993,7 @@ class CV_Dossier_Context {
         }
         $id_attr          = 'cvmap_' . $id . '_' . wp_generate_password( 6, false );
         $instructions_id  = $id_attr . '_instructions';
-        $unlock_text      = __( 'Attiva la mappa per lo zoom e la navigazione', 'cv-dossier' );
-        $instructions_txt = __( 'Tocca o clicca sulla mappa per attivare lo zoom e la navigazione. Su dispositivi touch usa due dita per muoverti sulla mappa. Premi Tab per tornare al contenuto successivo.', 'cv-dossier' );
+        $instructions_txt = __( 'Trascina la mappa per esplorare i punti di interesse. Lo zoom è disabilitato per mantenere la panoramica.', 'cv-dossier' );
         $markers_json     = wp_json_encode( $markers );
         $json_failed      = ( false === $markers_json );
 
@@ -1031,7 +1002,7 @@ class CV_Dossier_Context {
         }
 
         ob_start(); ?>
-        <div id="<?php echo esc_attr( $id_attr ); ?>" class="cv-map" role="region" aria-label="<?php echo esc_attr__( 'Mappa del dossier', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>" data-unlock-text="<?php echo esc_attr( $unlock_text ); ?>"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> style="height:<?php echo intval( $height ); ?>px;" tabindex="0"></div>
+        <div id="<?php echo esc_attr( $id_attr ); ?>" class="cv-map" role="region" aria-label="<?php echo esc_attr__( 'Mappa del dossier', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> style="height:<?php echo intval( $height ); ?>px;" tabindex="0"></div>
         <span id="<?php echo esc_attr( $instructions_id ); ?>" class="cv-sr-only"><?php echo esc_html( $instructions_txt ); ?></span>
         <?php if ( $json_failed ) :
             return ob_get_clean();
@@ -1043,7 +1014,6 @@ class CV_Dossier_Context {
             var markers = <?php echo $markers_json; ?>;
             var attempts = 0;
             var maxAttempts = 30;
-            var unlockText = el.getAttribute('data-unlock-text') || '';
             var instructionId = el.getAttribute('aria-describedby') || '';
             function init(){
                 if (typeof L === 'undefined') {
@@ -1055,7 +1025,15 @@ class CV_Dossier_Context {
                     setTimeout(init, 200);
                     return;
                 }
-                var map = L.map(el, { scrollWheelZoom: false, tap: true });
+                var map = L.map(el, {
+                    scrollWheelZoom: false,
+                    tap: false,
+                    touchZoom: false,
+                    doubleClickZoom: false,
+                    boxZoom: false,
+                    keyboard: false,
+                    zoomControl: false
+                });
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                 }).addTo(map);
@@ -1087,94 +1065,16 @@ class CV_Dossier_Context {
                     map.setView([42.416, 12.105], 11);
                 }
 
-                var scrollEnabled = false;
-                function enableScroll(){
-                    if (!scrollEnabled) {
-                        map.scrollWheelZoom.enable();
-                        scrollEnabled = true;
+                if (instructionId) {
+                    var instructionEl = document.getElementById(instructionId);
+                    if (instructionEl) {
+                        instructionEl.setAttribute('aria-hidden', 'false');
                     }
                 }
 
-                function disableScroll(){
-                    if (scrollEnabled) {
-                        map.scrollWheelZoom.disable();
-                        scrollEnabled = false;
-                    }
-                }
-
-                var unlockButton = null;
-                function removeUnlockButton() {
-                    if (!unlockButton) {
-                        return;
-                    }
-
-                    if (typeof unlockButton.remove === 'function') {
-                        unlockButton.remove();
-                    } else if (unlockButton.parentNode) {
-                        unlockButton.parentNode.removeChild(unlockButton);
-                    }
-
-                    unlockButton = null;
-                }
-
-                if (unlockText) {
-                    unlockButton = document.createElement('button');
-                    unlockButton.type = 'button';
-                    unlockButton.className = 'cv-map__unlock';
-                    if (instructionId) {
-                        unlockButton.setAttribute('aria-describedby', instructionId);
-                    }
-                    unlockButton.textContent = unlockText;
-                    unlockButton.addEventListener('click', function() {
-                        enableScroll();
-                        removeUnlockButton();
-                        el.focus();
-                    });
-                    el.appendChild(unlockButton);
-                }
-
-                el.addEventListener('click', function(){
-                    removeUnlockButton();
-                    enableScroll();
+                window.addEventListener('resize', function(){
+                    setTimeout(function(){ map.invalidateSize(); }, 200);
                 });
-                el.addEventListener('focus', function(){
-                    removeUnlockButton();
-                    enableScroll();
-                });
-                el.addEventListener('blur', function(){
-                    disableScroll();
-                });
-                el.addEventListener('mouseenter', function(){
-                    if (window.matchMedia('(pointer: coarse)').matches) {
-                        return;
-                    }
-                    removeUnlockButton();
-                    enableScroll();
-                });
-                el.addEventListener('mouseleave', function(){
-                    disableScroll();
-                });
-                el.addEventListener('keydown', function(event){
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        removeUnlockButton();
-                        enableScroll();
-                    }
-                });
-                el.addEventListener('touchstart', function(){
-                    removeUnlockButton();
-                    enableScroll();
-                }, { passive: true });
-                el.addEventListener('touchend', function(){
-                    setTimeout(disableScroll, 200);
-                }, { passive: true });
-                if (unlockButton) {
-                    unlockButton.addEventListener('focus', function(){
-                        unlockButton.classList.add('is-focused');
-                    });
-                    unlockButton.addEventListener('blur', function(){
-                        unlockButton.classList.remove('is-focused');
-                    });
-                }
             }
             init();
         })();
