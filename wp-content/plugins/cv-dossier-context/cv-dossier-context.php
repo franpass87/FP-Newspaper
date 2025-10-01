@@ -23,10 +23,12 @@ class CV_Dossier_Context {
     private function __construct() {
         register_activation_hook( __FILE__, [ $this, 'activate' ] );
         register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall' ] );
+        add_action( 'plugins_loaded', [ $this, 'load_textdomain' ] );
         add_action( 'init', [ $this, 'register_cpts' ] );
         add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
         add_action( 'save_post', [ $this, 'save_meta' ] );
         add_filter( 'the_content', [ $this, 'auto_context_in_post' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin' ] );
 
         // Shortcodes
         add_shortcode( 'cv_dossier_context', [ $this, 'sc_context' ] );
@@ -64,7 +66,7 @@ class CV_Dossier_Context {
     public static function uninstall() {
         // Only remove data if user explicitly chooses to
         if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) return;
-        
+
         global $wpdb;
         
         // Remove custom tables (optional - some plugins keep data)
@@ -81,10 +83,14 @@ class CV_Dossier_Context {
         wp_cache_flush();
     }
 
+    public function load_textdomain() {
+        load_plugin_textdomain( 'cv-dossier', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+    }
+
     public function register_cpts() {
         // CPT Dossier
         register_post_type( 'cv_dossier', [
-            'label' => 'Dossier',
+            'label' => __( 'Dossier', 'cv-dossier' ),
             'public' => true,
             'show_in_rest' => true,
             'menu_icon' => 'dashicons-portfolio',
@@ -95,7 +101,7 @@ class CV_Dossier_Context {
 
         // CPT Eventi (timeline) - figli di Dossier
         register_post_type( 'cv_dossier_event', [
-            'label' => 'Eventi Dossier',
+            'label' => __( 'Eventi Dossier', 'cv-dossier' ),
             'public' => false,
             'show_ui' => true,
             'show_in_rest' => false,
@@ -106,11 +112,12 @@ class CV_Dossier_Context {
 
     public function add_meta_boxes() {
         // Metabox Dossier
-        add_meta_box( 'cv_dossier_meta', 'Dettagli Dossier', [ $this, 'mb_dossier' ], 'cv_dossier', 'normal', 'default' );
+        add_meta_box( 'cv_dossier_meta', __( 'Dettagli Dossier', 'cv-dossier' ), [ $this, 'mb_dossier' ], 'cv_dossier', 'normal', 'default' );
         // Metabox Evento
-        add_meta_box( 'cv_event_meta', 'Dettagli Evento (Timeline)', [ $this, 'mb_event' ], 'cv_dossier_event', 'normal', 'default' );
+        add_meta_box( 'cv_event_meta', __( 'Dettagli Evento (Timeline)', 'cv-dossier' ), [ $this, 'mb_event' ], 'cv_dossier_event', 'normal', 'default' );
         // Metabox su Post: aggancio a Dossier
-        add_meta_box( 'cv_link_meta', 'Dossier collegato', [ $this, 'mb_link' ], 'post', 'side', 'default' );
+        add_meta_box( 'cv_link_meta', __( 'Dossier collegato', 'cv-dossier' ), [ $this, 'mb_link' ], 'post', 'side', 'default' );
+        add_meta_box( 'cv_post_map_meta', __( 'Mappa interattiva', 'cv-dossier' ), [ $this, 'mb_post_map' ], 'post', 'normal', 'high' );
     }
 
     public function mb_dossier( $post ) {
@@ -119,17 +126,27 @@ class CV_Dossier_Context {
         $score    = get_post_meta( $post->ID, '_cv_score', true );       // 0-100
         $facts    = get_post_meta( $post->ID, '_cv_facts', true );       // testo (bullet, uno per riga)
         $actors   = get_post_meta( $post->ID, '_cv_actors', true );      // elenco attori/enti
-        echo '<p><label>Stato: </label>
-              <select name="cv_status">
-                <option value="open" '.selected($status,'open',false).'>Aperto</option>
-                <option value="closed" '.selected($status,'closed',false).'>Chiuso</option>
-              </select></p>';
-        echo '<p><label>Promesse mantenute (%): </label>
-              <input type="number" min="0" max="100" name="cv_score" value="'.esc_attr($score).'"/></p>';
-        echo '<p><label>Punti chiave (uno per riga):</label><br/>
-              <textarea name="cv_facts" rows="5" style="width:100%;">'.esc_textarea($facts).'</textarea></p>';
-        echo '<p><label>Attori/Enti coinvolti (virgola-separati):</label><br/>
-              <input type="text" name="cv_actors" style="width:100%;" value="'.esc_attr($actors).'"/></p>';
+        ?>
+        <p>
+            <label for="cv_status"><?php esc_html_e( 'Stato', 'cv-dossier' ); ?></label>
+            <select id="cv_status" name="cv_status">
+                <option value="open" <?php selected( $status, 'open' ); ?>><?php esc_html_e( 'Aperto', 'cv-dossier' ); ?></option>
+                <option value="closed" <?php selected( $status, 'closed' ); ?>><?php esc_html_e( 'Chiuso', 'cv-dossier' ); ?></option>
+            </select>
+        </p>
+        <p>
+            <label for="cv_score"><?php esc_html_e( 'Promesse mantenute (%)', 'cv-dossier' ); ?></label>
+            <input type="number" min="0" max="100" id="cv_score" name="cv_score" value="<?php echo esc_attr( $score ); ?>" />
+        </p>
+        <p>
+            <label for="cv_facts"><?php esc_html_e( 'Punti chiave (uno per riga)', 'cv-dossier' ); ?></label><br />
+            <textarea id="cv_facts" name="cv_facts" rows="5" style="width:100%;"><?php echo esc_textarea( $facts ); ?></textarea>
+        </p>
+        <p>
+            <label for="cv_actors"><?php esc_html_e( 'Attori/Enti coinvolti (separati da virgola)', 'cv-dossier' ); ?></label><br />
+            <input type="text" id="cv_actors" name="cv_actors" style="width:100%;" value="<?php echo esc_attr( $actors ); ?>" />
+        </p>
+        <?php
     }
 
     public function mb_event( $post ) {
@@ -139,34 +156,62 @@ class CV_Dossier_Context {
         $lat   = get_post_meta( $post->ID, '_cv_lat', true );
         $lng   = get_post_meta( $post->ID, '_cv_lng', true );
         $parent= wp_get_post_parent_id( $post->ID );
-        echo '<p><label>Data (YYYY-MM-DD): </label><input type="date" name="cv_date" value="'.esc_attr($date).'"/></p>';
-        echo '<p><label>Luogo (nome): </label><input type="text" name="cv_place" style="width:100%;" value="'.esc_attr($place).'"/></p>';
-        echo '<p><label>Latitudine: </label><input type="text" name="cv_lat" value="'.esc_attr($lat).'"/> ';
-        echo '<label>Longitudine: </label><input type="text" name="cv_lng" value="'.esc_attr($lng).'"/></p>';
-        // parent selector
+        ?>
+        <p>
+            <label for="cv_date"><?php esc_html_e( 'Data (YYYY-MM-DD)', 'cv-dossier' ); ?></label>
+            <input type="date" id="cv_date" name="cv_date" value="<?php echo esc_attr( $date ); ?>" />
+        </p>
+        <p>
+            <label for="cv_place"><?php esc_html_e( 'Luogo (nome)', 'cv-dossier' ); ?></label>
+            <input type="text" id="cv_place" name="cv_place" style="width:100%;" value="<?php echo esc_attr( $place ); ?>" />
+        </p>
+        <p>
+            <label for="cv_lat"><?php esc_html_e( 'Latitudine', 'cv-dossier' ); ?></label>
+            <input type="text" id="cv_lat" name="cv_lat" value="<?php echo esc_attr( $lat ); ?>" />
+            <label for="cv_lng" style="margin-left:10px;">&nbsp;<?php esc_html_e( 'Longitudine', 'cv-dossier' ); ?></label>
+            <input type="text" id="cv_lng" name="cv_lng" value="<?php echo esc_attr( $lng ); ?>" />
+        </p>
+        <?php
         $dossiers = get_posts([ 'post_type'=>'cv_dossier', 'numberposts'=>-1, 'orderby'=>'title', 'order'=>'ASC' ]);
-        echo '<p><label>Dossier: </label><select name="cv_parent">';
-        echo '<option value="">— Seleziona —</option>';
-        foreach( $dossiers as $d ) {
-            echo '<option value="'.intval($d->ID).'" '.selected($parent,$d->ID,false).'>'.esc_html($d->post_title).'</option>';
-        }
-        echo '</select></p>';
+        ?>
+        <p>
+            <label for="cv_parent"><?php esc_html_e( 'Dossier', 'cv-dossier' ); ?></label>
+            <select id="cv_parent" name="cv_parent">
+                <option value=""><?php esc_html_e( '— Seleziona —', 'cv-dossier' ); ?></option>
+                <?php foreach ( $dossiers as $d ) : ?>
+                    <option value="<?php echo intval( $d->ID ); ?>" <?php selected( $parent, $d->ID ); ?>><?php echo esc_html( $d->post_title ); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </p>
+        <?php
     }
 
     public function mb_link( $post ) {
         wp_nonce_field( self::NONCE, self::NONCE );
         $linked = get_post_meta( $post->ID, '_cv_dossier_id', true );
         $dossiers = get_posts([ 'post_type'=>'cv_dossier', 'numberposts'=>-1, 'orderby'=>'title', 'order'=>'ASC' ]);
-        echo '<p><label>Collega a Dossier: </label><select name="cv_link_dossier" style="width:100%;">';
-        echo '<option value="">— Nessuno —</option>';
-        foreach( $dossiers as $d ) {
-            echo '<option value="'.intval($d->ID).'" '.selected($linked,$d->ID,false).'>'.esc_html($d->post_title).'</option>';
-        }
-        echo '</select></p>';
+        ?>
+        <p>
+            <label for="cv_link_dossier"><?php esc_html_e( 'Collega a Dossier', 'cv-dossier' ); ?></label>
+            <select id="cv_link_dossier" name="cv_link_dossier" style="width:100%;">
+                <option value=""><?php esc_html_e( '— Nessuno —', 'cv-dossier' ); ?></option>
+                <?php foreach ( $dossiers as $d ) : ?>
+                    <option value="<?php echo intval( $d->ID ); ?>" <?php selected( $linked, $d->ID ); ?>><?php echo esc_html( $d->post_title ); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </p>
+        <?php
     }
 
     public function save_meta( $post_id ) {
-        if ( ! isset($_POST[self::NONCE]) || ! wp_verify_nonce( $_POST[self::NONCE], self::NONCE ) ) return;
+        if ( ! isset( $_POST[ self::NONCE ] ) ) {
+            return;
+        }
+
+        $nonce = wp_unslash( $_POST[ self::NONCE ] );
+        if ( ! is_string( $nonce ) || ! wp_verify_nonce( $nonce, self::NONCE ) ) {
+            return;
+        }
         if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
         if ( isset($_POST['post_type']) && 'page' === $_POST['post_type'] ) {
             if ( ! current_user_can( 'edit_page', $post_id ) ) return;
@@ -176,91 +221,683 @@ class CV_Dossier_Context {
 
         // Dossier fields
         if ( get_post_type($post_id) === 'cv_dossier' ) {
-            $status = sanitize_text_field( $_POST['cv_status'] ?? 'open' );
+            $status = isset( $_POST['cv_status'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_status'] ) ) : 'open';
             $status = in_array( $status, ['open', 'closed'] ) ? $status : 'open';
-            
-            $score = intval( $_POST['cv_score'] ?? 0 );
+
+            $score = isset( $_POST['cv_score'] ) ? intval( wp_unslash( $_POST['cv_score'] ) ) : 0;
             $score = max( 0, min( 100, $score ) ); // Ensure score is between 0-100
-            
+
             update_post_meta( $post_id, '_cv_status', $status );
             update_post_meta( $post_id, '_cv_score',  $score );
-            update_post_meta( $post_id, '_cv_facts',  wp_kses_post( $_POST['cv_facts'] ?? '' ) );
-            update_post_meta( $post_id, '_cv_actors', sanitize_text_field( $_POST['cv_actors'] ?? '' ) );
+            $facts   = isset( $_POST['cv_facts'] ) ? wp_kses_post( wp_unslash( $_POST['cv_facts'] ) ) : '';
+            $actors  = isset( $_POST['cv_actors'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_actors'] ) ) : '';
+            update_post_meta( $post_id, '_cv_facts',  $facts );
+            update_post_meta( $post_id, '_cv_actors', $actors );
         }
 
         // Event fields
         if ( get_post_type($post_id) === 'cv_dossier_event' ) {
-            $date = preg_replace('/[^0-9\-]/', '', $_POST['cv_date'] ?? '' );
+            $date_raw = isset( $_POST['cv_date'] ) ? wp_unslash( $_POST['cv_date'] ) : '';
+            $date = preg_replace('/[^0-9\-]/', '', $date_raw );
             // Validate date format (basic check)
             if ( $date && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
                 $date = '';
             }
-            
-            $lat = sanitize_text_field( $_POST['cv_lat'] ?? '' );
-            $lng = sanitize_text_field( $_POST['cv_lng'] ?? '' );
-            
+
+            $lat = isset( $_POST['cv_lat'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_lat'] ) ) : '';
+            $lng = isset( $_POST['cv_lng'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_lng'] ) ) : '';
+
+            if ( $lat !== '' ) {
+                $lat = str_replace( ',', '.', $lat );
+            }
+
+            if ( $lng !== '' ) {
+                $lng = str_replace( ',', '.', $lng );
+            }
+
             // Validate coordinates (basic check)
             if ( $lat && ! is_numeric( $lat ) ) $lat = '';
             if ( $lng && ! is_numeric( $lng ) ) $lng = '';
             if ( $lat && ( $lat < -90 || $lat > 90 ) ) $lat = '';
             if ( $lng && ( $lng < -180 || $lng > 180 ) ) $lng = '';
-            
+
             update_post_meta( $post_id, '_cv_date',  $date );
-            update_post_meta( $post_id, '_cv_place', sanitize_text_field( $_POST['cv_place'] ?? '' ) );
+            $place = isset( $_POST['cv_place'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_place'] ) ) : '';
+            update_post_meta( $post_id, '_cv_place', $place );
             update_post_meta( $post_id, '_cv_lat',   $lat );
             update_post_meta( $post_id, '_cv_lng',   $lng );
             // parent
-            $parent = isset($_POST['cv_parent']) ? intval($_POST['cv_parent']) : 0;
-            wp_update_post([ 'ID'=>$post_id, 'post_parent'=>$parent ]);
+            $parent        = isset( $_POST['cv_parent'] ) ? intval( wp_unslash( $_POST['cv_parent'] ) ) : 0;
+            $current_parent = (int) wp_get_post_parent_id( $post_id );
+
+            if ( $parent !== $current_parent ) {
+                remove_action( 'save_post', [ $this, 'save_meta' ] );
+                wp_update_post([
+                    'ID'          => $post_id,
+                    'post_parent' => $parent,
+                ]);
+                add_action( 'save_post', [ $this, 'save_meta' ] );
+            }
         }
 
         // Post link to dossier
         if ( get_post_type($post_id) === 'post' ) {
-            $dossier_id = isset($_POST['cv_link_dossier']) ? intval($_POST['cv_link_dossier']) : 0;
+            $dossier_id = isset($_POST['cv_link_dossier']) ? intval( wp_unslash( $_POST['cv_link_dossier'] ) ) : 0;
             if ( $dossier_id > 0 ) update_post_meta( $post_id, '_cv_dossier_id', $dossier_id );
             else delete_post_meta( $post_id, '_cv_dossier_id' );
+
+            if ( isset( $_POST['cv_map_markers_present'] ) ) {
+                $raw_markers = [];
+                if ( isset( $_POST['cv_map_markers'] ) && is_array( $_POST['cv_map_markers'] ) ) {
+                    $raw_markers = wp_unslash( $_POST['cv_map_markers'] );
+                }
+                $clean_markers = [];
+                $allowed_tags = [
+                    'a' => [ 'href' => [], 'title' => [], 'target' => [], 'rel' => [] ],
+                    'br' => [],
+                    'em' => [],
+                    'strong' => [],
+                    'p' => [],
+                    'ul' => [],
+                    'ol' => [],
+                    'li' => [],
+                ];
+
+                foreach ( $raw_markers as $marker ) {
+                    if ( ! is_array( $marker ) ) continue;
+
+                    $lat = isset($marker['lat']) ? str_replace(',', '.', trim($marker['lat'])) : '';
+                    $lng = isset($marker['lng']) ? str_replace(',', '.', trim($marker['lng'])) : '';
+                    if ( $lat === '' || $lng === '' ) {
+                        continue;
+                    }
+
+                    if ( ! is_numeric( $lat ) || ! is_numeric( $lng ) ) {
+                        continue;
+                    }
+
+                    $lat = floatval( $lat );
+                    $lng = floatval( $lng );
+
+                    if ( $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180 ) {
+                        continue;
+                    }
+
+                    $title = isset( $marker['title'] ) ? sanitize_text_field( $marker['title'] ) : '';
+                    $description = isset( $marker['description'] ) ? wp_kses( $marker['description'], $allowed_tags ) : '';
+                    $image_id = isset($marker['image_id']) ? intval($marker['image_id']) : 0;
+                    $image_alt = isset( $marker['image_alt'] ) ? sanitize_text_field( $marker['image_alt'] ) : '';
+                    $image_url = '';
+
+                    if ( $image_id > 0 && ! wp_attachment_is_image( $image_id ) ) {
+                        $image_id = 0;
+                        $image_url = '';
+                    }
+
+                    if ( $image_id > 0 ) {
+                        $image_url = wp_get_attachment_url( $image_id ) ?: '';
+                    } else {
+                        $image_url = isset( $marker['image_url'] ) ? $this->sanitize_marker_image_url( $marker['image_url'] ) : '';
+                    }
+
+                    $clean_markers[] = [
+                        'title'       => $title,
+                        'lat'         => $lat,
+                        'lng'         => $lng,
+                        'description' => $description,
+                        'image_id'    => $image_id,
+                        'image_url'   => $image_url,
+                        'image_alt'   => $image_alt,
+                    ];
+                }
+
+                if ( ! empty( $clean_markers ) ) {
+                    update_post_meta( $post_id, '_cv_map_markers', $clean_markers );
+                } else {
+                    delete_post_meta( $post_id, '_cv_map_markers' );
+                }
+            }
         }
     }
 
     /** FRONTEND **/
 
     public function enqueue_front() {
-        // Base CSS
         wp_register_style( 'cv-dossier', plugins_url( 'css/cv-dossier.css', __FILE__ ), [], self::VERSION );
-        wp_enqueue_style( 'cv-dossier' );
 
-        // Leaflet (solo se necessario, ma la usiamo nel map shortcode)
-        if ( ! wp_script_is( 'leaflet', 'registered' ) ) {
+        if ( ! wp_style_is( 'leaflet', 'registered' ) ) {
             wp_register_style( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], '1.9.4' );
+        }
+
+        if ( ! wp_script_is( 'leaflet', 'registered' ) ) {
             wp_register_script( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], '1.9.4', true );
         }
 
-        // Front JS
         wp_register_script( 'cv-dossier', plugins_url( 'js/cv-dossier.js', __FILE__ ), [ 'jquery' ], self::VERSION, true );
-        wp_enqueue_script( 'cv-dossier' );
+
+        $needs_assets = false;
+        $needs_leaflet = false;
+
+        $post_id = get_queried_object_id();
+        if ( $post_id && is_singular( 'post' ) ) {
+            if ( get_post_meta( $post_id, '_cv_dossier_id', true ) ) {
+                $needs_assets = true;
+            }
+
+            $markers = get_post_meta( $post_id, '_cv_map_markers', true );
+            if ( is_array( $markers ) && ! empty( $markers ) ) {
+                $needs_assets  = true;
+                $needs_leaflet = true;
+            }
+        }
+
+        global $post;
+        if ( $post instanceof WP_Post ) {
+            if ( has_shortcode( $post->post_content, 'cv_dossier_context' ) || has_shortcode( $post->post_content, 'cv_dossier_timeline' ) ) {
+                $needs_assets = true;
+            }
+
+            if ( has_shortcode( $post->post_content, 'cv_dossier_map' ) ) {
+                $needs_assets  = true;
+                $needs_leaflet = true;
+            }
+        }
+
+        if ( $needs_assets ) {
+            $this->ensure_front_assets( $needs_leaflet );
+        }
+    }
+
+    public function enqueue_admin( $hook ) {
+        if ( ! in_array( $hook, [ 'post.php', 'post-new.php' ], true ) ) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if ( ! $screen || 'post' !== $screen->post_type ) {
+            return;
+        }
+
+        wp_enqueue_media();
+        wp_enqueue_style( 'cv-dossier-admin', plugins_url( 'css/cv-dossier-admin.css', __FILE__ ), [], self::VERSION );
+        wp_enqueue_script( 'cv-dossier-admin', plugins_url( 'js/cv-dossier-admin.js', __FILE__ ), [ 'jquery' ], self::VERSION, true );
+        wp_localize_script( 'cv-dossier-admin', 'CVDossierAdmin', [
+            'markerTemplate' => $this->get_marker_template('__INDEX__'),
+            'chooseImage'    => __( 'Scegli immagine', 'cv-dossier' ),
+            'removeImage'    => __( 'Rimuovi immagine', 'cv-dossier' ),
+            'removePoint'    => __( 'Rimuovi punto', 'cv-dossier' ),
+            'noImage'        => __( 'Nessuna immagine selezionata', 'cv-dossier' ),
+        ] );
     }
 
     public function localize_js(){
-        wp_localize_script( 'cv-dossier', 'CVDossier', [
-            'ajax'  => admin_url( 'admin-ajax.php' ),
-            'nonce' => wp_create_nonce( self::NONCE ),
-        ]);
+        if ( ! wp_script_is( 'cv-dossier', 'registered' ) ) {
+            return;
+        }
+
+        $data = [
+            'ajax'                 => admin_url( 'admin-ajax.php' ),
+            'nonce'                => wp_create_nonce( self::NONCE ),
+            'lightboxCloseLabel'   => __( 'Chiudi immagine', 'cv-dossier' ),
+            'lightboxDialogLabel'  => __( 'Immagine ingrandita', 'cv-dossier' ),
+            'submitLoadingText'    => __( 'Invio…', 'cv-dossier' ),
+            'followSuccessHtml'    => wp_kses_post( sprintf( '<span class="cv-ok" role="status" aria-live="polite" tabindex="-1">%s</span>', esc_html__( 'Iscritto ✔', 'cv-dossier' ) ) ),
+            'followGenericError'   => __( 'Errore durante l\'iscrizione. Riprova.', 'cv-dossier' ),
+            'followNetworkError'   => __( 'Errore di connessione. Riprova.', 'cv-dossier' ),
+            'mapLoadingLabel'      => __( 'Caricamento mappa...', 'cv-dossier' ),
+            'mapErrorGeneric'      => __( 'Impossibile caricare la mappa.', 'cv-dossier' ),
+            'mapErrorLeaflet'      => __( 'Impossibile caricare la mappa: il servizio cartografico non ha risposto.', 'cv-dossier' ),
+            'mapErrorTimeout'      => __( 'Impossibile inizializzare la mappa entro il tempo previsto.', 'cv-dossier' ),
+            'mapErrorRefresh'      => __( 'Ricarica la pagina e riprova', 'cv-dossier' ),
+            'cardAriaLabel'        => __( 'Scheda dossier', 'cv-dossier' ),
+            'followFormAriaLabel'  => __( 'Modulo per seguire il dossier', 'cv-dossier' ),
+            'followEmailAriaLabel' => __( 'Inserisci la tua email per ricevere aggiornamenti', 'cv-dossier' ),
+        ];
+
+        wp_localize_script( 'cv-dossier', 'CVDossier', $data );
+    }
+
+    private function ensure_front_assets( $include_leaflet = false ) {
+        if ( wp_style_is( 'cv-dossier', 'registered' ) && ! wp_style_is( 'cv-dossier', 'enqueued' ) ) {
+            wp_enqueue_style( 'cv-dossier' );
+        }
+
+        if ( wp_script_is( 'cv-dossier', 'registered' ) && ! wp_script_is( 'cv-dossier', 'enqueued' ) ) {
+            wp_enqueue_script( 'cv-dossier' );
+        }
+
+        if ( $include_leaflet ) {
+            if ( wp_style_is( 'leaflet', 'registered' ) && ! wp_style_is( 'leaflet', 'enqueued' ) ) {
+                wp_enqueue_style( 'leaflet' );
+            }
+            if ( wp_script_is( 'leaflet', 'registered' ) && ! wp_script_is( 'leaflet', 'enqueued' ) ) {
+                wp_enqueue_script( 'leaflet' );
+            }
+        }
     }
 
     public function auto_context_in_post( $content ) {
         if ( is_singular('post') && in_the_loop() && is_main_query() ) {
+            $prepend = '';
             $dossier_id = intval( get_post_meta( get_the_ID(), '_cv_dossier_id', true ) );
             if ( $dossier_id ) {
                 $card = $this->render_context_card( $dossier_id, true );
-                if ( $card ) $content = $card . $content;
+                if ( $card ) {
+                    $this->ensure_front_assets();
+                    $prepend .= $card;
+                }
+            }
+
+            $map = $this->render_post_map( get_the_ID() );
+            if ( $map ) {
+                $prepend .= $map;
+            }
+
+            if ( $prepend ) {
+                $content = $prepend . $content;
             }
         }
         return $content;
     }
 
+    public function mb_post_map( $post ) {
+        wp_nonce_field( self::NONCE, self::NONCE );
+        $markers = get_post_meta( $post->ID, '_cv_map_markers', true );
+        if ( ! is_array( $markers ) ) {
+            $markers = [];
+        }
+
+        echo '<input type="hidden" name="cv_map_markers_present" value="1" />';
+        echo '<p class="description">' . esc_html__( 'Aggiungi dei punti sulla mappa indicando coordinate (latitudine e longitudine), contenuti descrittivi e, facoltativamente, un&#39;immagine. I lettori potranno aprire la foto a schermo intero.', 'cv-dossier' ) . '</p>';
+        echo '<div id="cv-map-markers" class="cv-map-markers">';
+
+        if ( ! empty( $markers ) ) {
+            foreach ( $markers as $index => $marker ) {
+                echo $this->get_marker_template( $index, $marker );
+            }
+        } else {
+            echo $this->get_marker_template( 0, [] );
+        }
+
+        echo '</div>';
+        echo '<p><button type="button" class="button button-secondary" id="cv-map-add-marker">' . esc_html__( 'Aggiungi punto', 'cv-dossier' ) . '</button></p>';
+        echo '<p class="description">' . esc_html__( 'Suggerimento: puoi ottenere le coordinate cliccando con il tasto destro su Google Maps oppure usando servizi come openstreetmap.org.', 'cv-dossier' ) . '</p>';
+    }
+
+    private function get_marker_template( $index, $marker = [] ) {
+        $defaults = [
+            'title'       => '',
+            'lat'         => '',
+            'lng'         => '',
+            'description' => '',
+            'image_id'    => 0,
+            'image_url'   => '',
+            'image_alt'   => '',
+        ];
+
+        $is_placeholder = is_string( $index ) && false !== strpos( $index, '__INDEX__' );
+        if ( $is_placeholder ) {
+            $marker = array_merge( $defaults, [] );
+        } else {
+            $marker = array_merge( $defaults, is_array( $marker ) ? $marker : [] );
+        }
+
+        $index_attr = $is_placeholder ? $index : intval( $index );
+        $display_number = $is_placeholder ? '' : intval( $index ) + 1;
+        $image_id_value = $is_placeholder ? 0 : intval( $marker['image_id'] );
+        $image_url_value = $is_placeholder ? '' : $this->sanitize_marker_image_url( $marker['image_url'] ?? '' );
+        $image_alt_value = $is_placeholder ? '' : ( $marker['image_alt'] ?? '' );
+        $preview_url = '';
+
+        if ( $image_id_value ) {
+            if ( wp_attachment_is_image( $image_id_value ) ) {
+                $thumb = wp_get_attachment_image_src( $image_id_value, 'medium' );
+                if ( $thumb ) {
+                    $preview_url = $thumb[0];
+                } else {
+                    $preview_url = wp_get_attachment_url( $image_id_value );
+                }
+            } else {
+                $image_id_value = 0;
+                $image_url_value = '';
+            }
+        } elseif ( $image_url_value ) {
+            $preview_url = $image_url_value;
+        }
+
+        ob_start();
+        ?>
+        <div class="cv-map-marker" data-index="<?php echo esc_attr( $index_attr ); ?>">
+            <div class="cv-map-marker__header">
+                <strong><?php esc_html_e( 'Punto', 'cv-dossier' ); ?> <span class="cv-map-marker__number"><?php echo esc_html( $display_number ); ?></span></strong>
+                <button type="button" class="button-link-delete cv-map-marker__remove"><?php echo esc_html__( 'Rimuovi punto', 'cv-dossier' ); ?></button>
+            </div>
+            <div class="cv-map-marker__fields">
+                <p>
+                    <label><?php esc_html_e( 'Titolo del punto', 'cv-dossier' ); ?></label>
+                    <input type="text" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][title]" value="<?php echo esc_attr( $marker['title'] ?? '' ); ?>" class="widefat" />
+                </p>
+                <div class="cv-map-marker__coords">
+                    <p>
+                        <label><?php esc_html_e( 'Latitudine', 'cv-dossier' ); ?></label>
+                        <input type="number" step="any" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][lat]" value="<?php echo esc_attr( $marker['lat'] ?? '' ); ?>" />
+                    </p>
+                    <p>
+                        <label><?php esc_html_e( 'Longitudine', 'cv-dossier' ); ?></label>
+                        <input type="number" step="any" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][lng]" value="<?php echo esc_attr( $marker['lng'] ?? '' ); ?>" />
+                    </p>
+                </div>
+                <p>
+                    <label><?php esc_html_e( 'Descrizione (HTML ammesso: link, grassetto, elenco)', 'cv-dossier' ); ?></label>
+                    <textarea name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][description]" class="widefat" rows="4"><?php echo esc_textarea( $marker['description'] ?? '' ); ?></textarea>
+                </p>
+                <div class="cv-map-marker__image">
+                    <div class="cv-map-marker__image-preview">
+                        <?php if ( $preview_url ) : ?>
+                            <img src="<?php echo esc_url( $preview_url ); ?>" alt="" />
+                        <?php else : ?>
+                            <span class="cv-map-marker__image-placeholder"><?php esc_html_e( 'Nessuna immagine selezionata', 'cv-dossier' ); ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="cv-map-marker__image-actions">
+                        <input type="hidden" class="cv-map-marker__image-id" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][image_id]" value="<?php echo esc_attr( $image_id_value ); ?>" />
+                        <input type="url" class="cv-map-marker__image-url" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][image_url]" value="<?php echo esc_attr( $image_url_value ); ?>" placeholder="https://" />
+                        <input type="text" class="cv-map-marker__image-alt" name="cv_map_markers[<?php echo esc_attr( $index_attr ); ?>][image_alt]" value="<?php echo esc_attr( $image_alt_value ); ?>" placeholder="<?php esc_attr_e( 'Testo alternativo immagine', 'cv-dossier' ); ?>" />
+                        <button type="button" class="button cv-map-marker__select-media"><?php echo esc_html__( 'Scegli dalla libreria', 'cv-dossier' ); ?></button>
+                        <button type="button" class="button-link cv-map-marker__clear-media"><?php echo esc_html__( 'Rimuovi immagine', 'cv-dossier' ); ?></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function render_post_map( $post_id ) {
+        $markers = get_post_meta( $post_id, '_cv_map_markers', true );
+        if ( ! is_array( $markers ) || empty( $markers ) ) {
+            return '';
+        }
+
+        $prepared = [];
+        foreach ( $markers as $marker ) {
+            if ( ! isset( $marker['lat'], $marker['lng'] ) ) {
+                continue;
+            }
+
+            $lat = floatval( $marker['lat'] );
+            $lng = floatval( $marker['lng'] );
+
+            $title = sanitize_text_field( $marker['title'] ?? '' );
+            $description = wpautop( $marker['description'] ?? '' );
+            $description = wp_kses_post( $description );
+            $image_data = $this->prepare_marker_image( $marker );
+
+            $prepared[] = [
+                'title'       => $title,
+                'lat'         => $lat,
+                'lng'         => $lng,
+                'description' => $description,
+                'image'       => $image_data,
+            ];
+        }
+
+        if ( empty( $prepared ) ) {
+            return '';
+        }
+
+        $this->ensure_front_assets( true );
+
+        $map_id           = 'cv_post_map_' . $post_id . '_' . wp_generate_password( 6, false );
+        $instructions_id  = $map_id . '_instructions';
+        $unlock_text      = __( 'Attiva la mappa per lo zoom e la navigazione', 'cv-dossier' );
+        $instructions_txt = __( 'Tocca o clicca sulla mappa per attivare lo zoom e la navigazione. Su dispositivi touch usa due dita per muoverti sulla mappa. Premi Tab per tornare al contenuto successivo.', 'cv-dossier' );
+        $prepared_json    = wp_json_encode( $prepared );
+        $json_failed      = ( false === $prepared_json );
+
+        if ( $json_failed ) {
+            $prepared_json = '';
+        }
+
+        ob_start();
+        ?>
+        <div class="cv-map cv-map--article" id="<?php echo esc_attr( $map_id ); ?>" role="region" aria-label="<?php echo esc_attr__( 'Mappa degli approfondimenti', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>" data-unlock-text="<?php echo esc_attr( $unlock_text ); ?>"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> tabindex="0"></div>
+        <span id="<?php echo esc_attr( $instructions_id ); ?>" class="cv-sr-only"><?php echo esc_html( $instructions_txt ); ?></span>
+        <?php if ( $json_failed ) :
+            return ob_get_clean();
+        endif; ?>
+        <script>
+        (function(){
+            var markers = <?php echo $prepared_json; ?>;
+            var el = document.getElementById('<?php echo esc_js( $map_id ); ?>');
+            if (!el) { return; }
+            var attempts = 0;
+            var maxAttempts = 30;
+            var unlockText = el.getAttribute('data-unlock-text') || '';
+            var instructionId = el.getAttribute('aria-describedby') || '';
+            function init(){
+                if (typeof L === 'undefined') {
+                    attempts++;
+                    if (attempts > maxAttempts) {
+                        el.setAttribute('data-map-error', 'leaflet-unavailable');
+                        return;
+                    }
+                    setTimeout(init, 200);
+                    return;
+                }
+                var map = L.map(el, { scrollWheelZoom: false, tap: true });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                var bounds = [];
+                markers.forEach(function(marker){
+                    var popupHtml = '<div class="cv-map-popup">';
+                    if (marker.title) {
+                        popupHtml += '<h4>' + marker.title + '</h4>';
+                    }
+                    if (marker.image && marker.image.full) {
+                        var alt = marker.image.alt ? marker.image.alt : marker.title;
+                        var thumb = marker.image.thumb ? marker.image.thumb : marker.image.full;
+                        popupHtml += '<a class="cv-map-popup-image" href="' + marker.image.full + '" data-full="' + marker.image.full + '" data-alt="' + (alt || '') + '"><img src="' + thumb + '" alt="' + (alt || '') + '" loading="lazy" /></a>';
+                    }
+                    if (marker.description) {
+                        popupHtml += '<div class="cv-map-popup__text">' + marker.description + '</div>';
+                    }
+                    popupHtml += '</div>';
+                    L.marker([marker.lat, marker.lng]).addTo(map).bindPopup(popupHtml);
+                    bounds.push([marker.lat, marker.lng]);
+                });
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 13);
+                } else if (bounds.length) {
+                    map.fitBounds(bounds, { padding: [20, 20] });
+                } else {
+                    map.setView([42.416, 12.105], 11);
+                }
+
+                var scrollEnabled = false;
+                function enableScroll(){
+                    if (!scrollEnabled) {
+                        map.scrollWheelZoom.enable();
+                        scrollEnabled = true;
+                    }
+                }
+
+                function disableScroll(){
+                    if (scrollEnabled) {
+                        map.scrollWheelZoom.disable();
+                        scrollEnabled = false;
+                    }
+                }
+
+                var unlockButton = null;
+                function removeUnlockButton() {
+                    if (!unlockButton) {
+                        return;
+                    }
+
+                    if (typeof unlockButton.remove === 'function') {
+                        unlockButton.remove();
+                    } else if (unlockButton.parentNode) {
+                        unlockButton.parentNode.removeChild(unlockButton);
+                    }
+
+                    unlockButton = null;
+                }
+
+                if (unlockText) {
+                    unlockButton = document.createElement('button');
+                    unlockButton.type = 'button';
+                    unlockButton.className = 'cv-map__unlock';
+                    if (instructionId) {
+                        unlockButton.setAttribute('aria-describedby', instructionId);
+                    }
+                    unlockButton.textContent = unlockText;
+                    unlockButton.addEventListener('click', function() {
+                        enableScroll();
+                        removeUnlockButton();
+                        el.focus();
+                    });
+                    el.appendChild(unlockButton);
+                }
+
+                el.addEventListener('click', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('focus', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('blur', function(){
+                    disableScroll();
+                });
+                el.addEventListener('mouseenter', function(){
+                    if (window.matchMedia('(pointer: coarse)').matches) {
+                        return;
+                    }
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('mouseleave', function(){
+                    disableScroll();
+                });
+                el.addEventListener('keydown', function(event){
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        removeUnlockButton();
+                        enableScroll();
+                    }
+                });
+                el.addEventListener('touchstart', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                }, { passive: true });
+                el.addEventListener('touchend', function(){
+                    setTimeout(disableScroll, 200);
+                }, { passive: true });
+                if (unlockButton) {
+                    unlockButton.addEventListener('focus', function(){
+                        unlockButton.classList.add('is-focused');
+                    });
+                    unlockButton.addEventListener('blur', function(){
+                        unlockButton.classList.remove('is-focused');
+                    });
+                }
+                window.addEventListener('resize', function(){
+                    setTimeout(function(){ map.invalidateSize(); }, 200);
+                });
+            }
+            init();
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function prepare_marker_image( $marker ) {
+        $image_id  = isset( $marker['image_id'] ) ? intval( $marker['image_id'] ) : 0;
+        $image_url = isset( $marker['image_url'] ) ? $this->sanitize_marker_image_url( $marker['image_url'] ) : '';
+        $image_alt = isset( $marker['image_alt'] ) ? sanitize_text_field( $marker['image_alt'] ) : '';
+
+        $normalize_alt = static function( $alt ) {
+            $alt = is_scalar( $alt ) ? (string) $alt : '';
+            $alt = sanitize_text_field( $alt );
+            $alt = preg_replace( '/[\r\n]+/', ' ', $alt );
+            return str_replace( "\"", '', $alt );
+        };
+
+        if ( $image_id > 0 && ! wp_attachment_is_image( $image_id ) ) {
+            $image_id = 0;
+        }
+
+        if ( $image_id > 0 ) {
+            $full = wp_get_attachment_image_src( $image_id, 'full' );
+            $thumb = wp_get_attachment_image_src( $image_id, 'large' );
+            if ( ! $thumb ) {
+                $thumb = wp_get_attachment_image_src( $image_id, 'medium_large' );
+            }
+            if ( ! $thumb ) {
+                $thumb = wp_get_attachment_image_src( $image_id, 'medium' );
+            }
+            $alt = $image_alt ?: get_post_meta( $image_id, '_wp_attachment_image_alt', true );
+            $alt = $normalize_alt( $alt );
+
+            if ( $full ) {
+                return [
+                    'full'  => esc_url( $full[0] ),
+                    'thumb' => esc_url( $thumb ? $thumb[0] : $full[0] ),
+                    'alt'   => $alt,
+                ];
+            }
+        }
+
+        if ( $image_url ) {
+            $alt = $normalize_alt( $image_alt );
+            return [
+                'full'  => esc_url( $image_url ),
+                'thumb' => esc_url( $image_url ),
+                'alt'   => $alt,
+            ];
+        }
+
+        return null;
+    }
+
+    private function sanitize_marker_image_url( $url ) {
+        if ( ! is_string( $url ) || $url === '' ) {
+            return '';
+        }
+
+        $url = esc_url_raw( $url );
+        if ( ! $url ) {
+            return '';
+        }
+
+        $path = wp_parse_url( $url, PHP_URL_PATH );
+        if ( ! $path ) {
+            return '';
+        }
+
+        $filename = wp_basename( $path );
+        if ( ! $filename ) {
+            return '';
+        }
+
+        $filetype = wp_check_filetype( $filename );
+        if ( empty( $filetype['type'] ) || strpos( $filetype['type'], 'image/' ) !== 0 ) {
+            return '';
+        }
+
+        return $url;
+    }
+
     public function sc_context( $atts ) {
         $id = intval( $atts['id'] ?? 0 );
-        return $this->render_context_card( $id, false );
+        $card = $this->render_context_card( $id, false );
+        if ( $card ) {
+            $this->ensure_front_assets();
+        }
+        return $card;
     }
 
     private function render_context_card( $dossier_id, $compact = false ) {
@@ -286,14 +923,14 @@ class CV_Dossier_Context {
         <aside class="cv-card" data-ga4="dossier_context" data-dossier="<?php echo esc_attr($dossier_id); ?>">
             <div class="cv-card__head">
                 <span class="cv-badge <?php echo $status==='open'?'open':'closed'; ?>">
-                    <?php echo $status==='open'?'Dossier aperto':'Dossier chiuso'; ?>
+                    <?php echo $status === 'open' ? esc_html__( 'Dossier aperto', 'cv-dossier' ) : esc_html__( 'Dossier chiuso', 'cv-dossier' ); ?>
                 </span>
                 <h3 class="cv-card__title">
                     <a href="<?php echo esc_url( get_permalink($dossier_id) ); ?>">
                         <?php echo esc_html( get_the_title($dossier_id) ); ?>
                     </a>
                 </h3>
-                <div class="cv-score" title="Promesse mantenute"><?php echo intval($score); ?>%</div>
+                <div class="cv-score" title="<?php echo esc_attr__( 'Promesse mantenute', 'cv-dossier' ); ?>"><?php echo intval($score); ?>%</div>
             </div>
 
             <div class="cv-card__body">
@@ -307,20 +944,20 @@ class CV_Dossier_Context {
                 <?php endif; ?>
 
                 <?php if ( $actors ) : ?>
-                    <div class="cv-actors"><strong>Attori/Enti:</strong> <?php echo esc_html($actors); ?></div>
+                    <div class="cv-actors"><strong><?php esc_html_e( 'Attori/Enti:', 'cv-dossier' ); ?></strong> <?php echo esc_html($actors); ?></div>
                 <?php endif; ?>
 
                 <?php if ( $last ) : ?>
-                    <div class="cv-last"><strong>Ultimo evento:</strong> <?php echo esc_html( $last ); ?></div>
+                    <div class="cv-last"><strong><?php esc_html_e( 'Ultimo evento:', 'cv-dossier' ); ?></strong> <?php echo esc_html( $last ); ?></div>
                 <?php endif; ?>
             </div>
 
             <div class="cv-card__cta">
-                <a class="cv-btn" href="<?php echo esc_url( get_permalink($dossier_id) ); ?>" data-ga4="open_dossier">Tutto il Dossier</a>
+                <a class="cv-btn" href="<?php echo esc_url( get_permalink($dossier_id) ); ?>" data-ga4="open_dossier"><?php esc_html_e( 'Tutto il dossier', 'cv-dossier' ); ?></a>
                 <form class="cv-follow" method="post" data-ga4="follow_dossier">
-                    <input type="email" name="email" placeholder="La tua email per gli aggiornamenti" required />
+                    <input type="email" name="email" placeholder="<?php echo esc_attr__( 'La tua email per gli aggiornamenti', 'cv-dossier' ); ?>" required />
                     <input type="hidden" name="dossier_id" value="<?php echo esc_attr($dossier_id); ?>"/>
-                    <button type="submit" class="cv-btn">Segui</button>
+                    <button type="submit" class="cv-btn"><?php esc_html_e( 'Segui', 'cv-dossier' ); ?></button>
                 </form>
             </div>
         </aside>
@@ -339,7 +976,9 @@ class CV_Dossier_Context {
             'orderby'  => 'meta_value',
             'order'    => 'ASC',
         ]);
-        if ( ! $events ) return '<p>Nessun evento in timeline.</p>';
+        if ( ! $events ) return '<p>' . esc_html__( 'Nessun evento in timeline.', 'cv-dossier' ) . '</p>';
+
+        $this->ensure_front_assets();
 
         $out = '<div class="cv-timeline" data-ga4="timeline">';
         foreach ( $events as $e ) {
@@ -356,48 +995,188 @@ class CV_Dossier_Context {
     }
 
     public function sc_map( $atts ) {
-        $id = intval( $atts['id'] ?? 0 );
-        $height = preg_replace('/[^0-9]/','', $atts['height'] ?? '380' );
+        $id     = intval( $atts['id'] ?? 0 );
+        $height = preg_replace( '/[^0-9]/', '', $atts['height'] ?? '380' );
         if ( ! $id ) return '';
-        wp_enqueue_style( 'leaflet' );
-        wp_enqueue_script( 'leaflet' );
+        $this->ensure_front_assets( true );
 
         $events = get_posts([
-            'post_type' => 'cv_dossier_event',
-            'numberposts' => -1,
-            'post_parent' => $id,
+            'post_type'  => 'cv_dossier_event',
+            'numberposts'=> -1,
+            'post_parent'=> $id,
         ]);
         $markers = [];
         foreach ( $events as $e ) {
-            $lat = get_post_meta($e->ID,'_cv_lat',true);
-            $lng = get_post_meta($e->ID,'_cv_lng',true);
+            $lat = get_post_meta( $e->ID, '_cv_lat', true );
+            $lng = get_post_meta( $e->ID, '_cv_lng', true );
             if ( $lat && $lng ) {
                 $markers[] = [
-                    'title' => $e->post_title,
-                    'lat'   => floatval($lat),
-                    'lng'   => floatval($lng),
-                    'place' => get_post_meta($e->ID,'_cv_place',true),
-                    'date'  => get_post_meta($e->ID,'_cv_date',true),
+                    'title' => sanitize_text_field( $e->post_title ),
+                    'lat'   => floatval( $lat ),
+                    'lng'   => floatval( $lng ),
+                    'place' => sanitize_text_field( get_post_meta( $e->ID, '_cv_place', true ) ),
+                    'date'  => sanitize_text_field( get_post_meta( $e->ID, '_cv_date', true ) ),
                 ];
             }
         }
-        $id_attr = 'cvmap_' . $id . '_' . wp_generate_password(6,false);
+        $id_attr          = 'cvmap_' . $id . '_' . wp_generate_password( 6, false );
+        $instructions_id  = $id_attr . '_instructions';
+        $unlock_text      = __( 'Attiva la mappa per lo zoom e la navigazione', 'cv-dossier' );
+        $instructions_txt = __( 'Tocca o clicca sulla mappa per attivare lo zoom e la navigazione. Su dispositivi touch usa due dita per muoverti sulla mappa. Premi Tab per tornare al contenuto successivo.', 'cv-dossier' );
+        $markers_json     = wp_json_encode( $markers );
+        $json_failed      = ( false === $markers_json );
+
+        if ( $json_failed ) {
+            $markers_json = '';
+        }
+
         ob_start(); ?>
-        <div id="<?php echo esc_attr($id_attr); ?>" class="cv-map" style="height:<?php echo intval($height); ?>px;"></div>
+        <div id="<?php echo esc_attr( $id_attr ); ?>" class="cv-map" role="region" aria-label="<?php echo esc_attr__( 'Mappa del dossier', 'cv-dossier' ); ?>" aria-describedby="<?php echo esc_attr( $instructions_id ); ?>" data-unlock-text="<?php echo esc_attr( $unlock_text ); ?>"<?php if ( $json_failed ) : ?> data-map-error="<?php echo esc_attr( 'data-invalid' ); ?>"<?php endif; ?> style="height:<?php echo intval( $height ); ?>px;" tabindex="0"></div>
+        <span id="<?php echo esc_attr( $instructions_id ); ?>" class="cv-sr-only"><?php echo esc_html( $instructions_txt ); ?></span>
+        <?php if ( $json_failed ) :
+            return ob_get_clean();
+        endif; ?>
         <script>
         (function(){
-            var el = document.getElementById('<?php echo esc_js($id_attr); ?>');
-            if(!el || !window.L) return;
-            var map = L.map(el).setView([42.416,12.105], 10); // Viterbo approx
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
-            var markers = <?php echo wp_json_encode($markers); ?>;
-            var bounds = [];
-            markers.forEach(function(m){
-                var mk = L.marker([m.lat,m.lng]).addTo(map)
-                    .bindPopup('<strong>'+m.title+'</strong><br/>'+ (m.place||'') +'<br/>'+ (m.date||'') );
-                bounds.push([m.lat,m.lng]);
-            });
-            if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
+            var el = document.getElementById('<?php echo esc_js( $id_attr ); ?>');
+            if (!el) { return; }
+            var markers = <?php echo $markers_json; ?>;
+            var attempts = 0;
+            var maxAttempts = 30;
+            var unlockText = el.getAttribute('data-unlock-text') || '';
+            var instructionId = el.getAttribute('aria-describedby') || '';
+            function init(){
+                if (typeof L === 'undefined') {
+                    attempts++;
+                    if (attempts > maxAttempts) {
+                        el.setAttribute('data-map-error', 'leaflet-unavailable');
+                        return;
+                    }
+                    setTimeout(init, 200);
+                    return;
+                }
+                var map = L.map(el, { scrollWheelZoom: false, tap: true });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                var bounds = [];
+                markers.forEach(function(marker){
+                    var popup = '<div class="cv-map-popup">';
+                    if (marker.title) {
+                        popup += '<h4>' + marker.title + '</h4>';
+                    }
+                    if (marker.place || marker.date) {
+                        popup += '<p class="cv-map-popup__meta">';
+                        if (marker.place) {
+                            popup += '<span class="cv-map-popup__place">' + marker.place + '</span>';
+                        }
+                        if (marker.date) {
+                            popup += '<span class="cv-map-popup__date">' + marker.date + '</span>';
+                        }
+                        popup += '</p>';
+                    }
+                    popup += '</div>';
+                    L.marker([marker.lat, marker.lng]).addTo(map).bindPopup(popup);
+                    bounds.push([marker.lat, marker.lng]);
+                });
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 13);
+                } else if (bounds.length) {
+                    map.fitBounds(bounds, { padding: [20, 20] });
+                } else {
+                    map.setView([42.416, 12.105], 11);
+                }
+
+                var scrollEnabled = false;
+                function enableScroll(){
+                    if (!scrollEnabled) {
+                        map.scrollWheelZoom.enable();
+                        scrollEnabled = true;
+                    }
+                }
+
+                function disableScroll(){
+                    if (scrollEnabled) {
+                        map.scrollWheelZoom.disable();
+                        scrollEnabled = false;
+                    }
+                }
+
+                var unlockButton = null;
+                function removeUnlockButton() {
+                    if (!unlockButton) {
+                        return;
+                    }
+
+                    if (typeof unlockButton.remove === 'function') {
+                        unlockButton.remove();
+                    } else if (unlockButton.parentNode) {
+                        unlockButton.parentNode.removeChild(unlockButton);
+                    }
+
+                    unlockButton = null;
+                }
+
+                if (unlockText) {
+                    unlockButton = document.createElement('button');
+                    unlockButton.type = 'button';
+                    unlockButton.className = 'cv-map__unlock';
+                    if (instructionId) {
+                        unlockButton.setAttribute('aria-describedby', instructionId);
+                    }
+                    unlockButton.textContent = unlockText;
+                    unlockButton.addEventListener('click', function() {
+                        enableScroll();
+                        removeUnlockButton();
+                        el.focus();
+                    });
+                    el.appendChild(unlockButton);
+                }
+
+                el.addEventListener('click', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('focus', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('blur', function(){
+                    disableScroll();
+                });
+                el.addEventListener('mouseenter', function(){
+                    if (window.matchMedia('(pointer: coarse)').matches) {
+                        return;
+                    }
+                    removeUnlockButton();
+                    enableScroll();
+                });
+                el.addEventListener('mouseleave', function(){
+                    disableScroll();
+                });
+                el.addEventListener('keydown', function(event){
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        removeUnlockButton();
+                        enableScroll();
+                    }
+                });
+                el.addEventListener('touchstart', function(){
+                    removeUnlockButton();
+                    enableScroll();
+                }, { passive: true });
+                el.addEventListener('touchend', function(){
+                    setTimeout(disableScroll, 200);
+                }, { passive: true });
+                if (unlockButton) {
+                    unlockButton.addEventListener('focus', function(){
+                        unlockButton.classList.add('is-focused');
+                    });
+                    unlockButton.addEventListener('blur', function(){
+                        unlockButton.classList.remove('is-focused');
+                    });
+                }
+            }
+            init();
         })();
         </script>
         <?php
@@ -406,10 +1185,15 @@ class CV_Dossier_Context {
 
     public function ajax_follow() {
         check_ajax_referer( self::NONCE, 'nonce' );
-        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-        $dossier_id = isset($_POST['dossier_id']) ? intval($_POST['dossier_id']) : 0;
+        $email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+        $dossier_id = isset( $_POST['dossier_id'] ) ? intval( wp_unslash( $_POST['dossier_id'] ) ) : 0;
         if ( ! $email || ! is_email($email) || ! $dossier_id ) {
-            wp_send_json_error([ 'message'=>'Dati non validi' ], 400 );
+            wp_send_json_error([ 'message' => __( 'Dati non validi', 'cv-dossier' ) ], 400 );
+        }
+
+        $dossier = get_post( $dossier_id );
+        if ( ! $dossier || 'cv_dossier' !== $dossier->post_type || 'publish' !== $dossier->post_status ) {
+            wp_send_json_error([ 'message' => __( 'Dossier non trovato', 'cv-dossier' ) ], 404 );
         }
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
@@ -423,9 +1207,9 @@ class CV_Dossier_Context {
         do_action( 'cv_dossier_follow', $dossier_id, $email );
 
         if ( $inserted === false ) {
-            wp_send_json_error([ 'message'=>'Errore di sistema' ], 500 );
+            wp_send_json_error([ 'message' => __( 'Errore di sistema', 'cv-dossier' ) ], 500 );
         } else {
-            wp_send_json_success([ 'message'=>'Ti avviseremo sugli aggiornamenti del dossier.' ]);
+            wp_send_json_success([ 'message' => __( 'Ti avviseremo sugli aggiornamenti del dossier.', 'cv-dossier' ) ]);
         }
     }
 }
