@@ -336,12 +336,15 @@
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 8px;
+    aspect-ratio: 1 / 1;
+    position: relative;
 }
 
 .cv-map-popup-image img {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     transition: transform 0.25s ease;
     cursor: zoom-in;
 }
@@ -395,10 +398,10 @@
 }
 
 .cv-map-lightbox__inner img {
-    width: 100%;
+    width: auto;
     height: auto;
-    max-height: 100vh;
-    max-width: min(90vw, 960px);
+    max-width: min(70vw, 70vh, 720px);
+    max-height: min(70vw, 70vh, 720px);
     object-fit: contain;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.4);
