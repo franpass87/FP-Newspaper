@@ -2,15 +2,20 @@
 /**
  * Plugin Name: CV Dossier & Context
  * Description: Dossier tematici con scheda riassuntiva automatica, timeline, mappa e follow-up per Cronaca di Viterbo.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Cronaca di Viterbo
  * License: GPLv2 or later
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+$autoload = __DIR__ . '/vendor/autoload.php';
+if ( is_readable( $autoload ) ) {
+    require $autoload;
+}
+
 class CV_Dossier_Context {
-    const VERSION = '1.0.0';
+    const VERSION = '1.0.2';
     const NONCE   = 'cv_dossier_nonce';
     const TABLE   = 'cv_dossier_followers';
     private static $instance = null;

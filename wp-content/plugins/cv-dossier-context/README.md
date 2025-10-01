@@ -152,3 +152,16 @@ CREATE TABLE wp_cv_dossier_followers (
 ## Licenza
 
 GPLv2 or later
+## Release process
+
+1. Aggiorna il codice e assicurati che i test/lint passino.
+2. Esegui il build script con il bump desiderato, ad esempio:
+   ```bash
+   bash build.sh --bump=patch
+   ```
+   oppure imposta manualmente la versione:
+   ```bash
+   bash build.sh --set-version=1.2.3
+   ```
+3. Carica lo zip generato in `build/` nell'admin di WordPress oppure allegalo alla release.
+4. Per rilasci automatizzati, crea e push un tag `vX.Y.Z` su GitHub: il workflow `build-plugin-zip.yml` produrrà lo zip come artifact `plugin-zip`.
