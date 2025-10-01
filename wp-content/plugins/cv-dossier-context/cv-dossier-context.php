@@ -20,6 +20,13 @@ class CV_Dossier_Context {
     const TABLE   = 'cv_dossier_followers';
     private static $instance = null;
 
+    /**
+     * Cache dossier map markers per request to avoid duplicate queries.
+     *
+     * @var array<int, array>
+     */
+    private $dossier_markers_cache = [];
+
     public static function init() {
         if ( null === self::$instance ) self::$instance = new self;
         return self::$instance;
@@ -131,7 +138,14 @@ class CV_Dossier_Context {
         $score    = get_post_meta( $post->ID, '_cv_score', true );       // 0-100
         $facts    = get_post_meta( $post->ID, '_cv_facts', true );       // testo (bullet, uno per riga)
         $actors   = get_post_meta( $post->ID, '_cv_actors', true );      // elenco attori/enti
+        $show_context  = $this->is_dossier_feature_enabled( $post->ID, '_cv_show_context', true );
+        $show_timeline = $this->is_dossier_feature_enabled( $post->ID, '_cv_show_timeline', true );
+        $default_map   = $this->dossier_has_map_markers( $post->ID );
+        $show_map      = $this->is_dossier_feature_enabled( $post->ID, '_cv_show_map', $default_map );
+        $map_height_meta = get_post_meta( $post->ID, '_cv_dossier_map_height', true );
+        $map_height      = $this->sanitize_map_height( $map_height_meta, 380 );
         ?>
+        <input type="hidden" name="cv_dossier_meta_present" value="1" />
         <p>
             <label for="cv_status"><?php esc_html_e( 'Stato', 'cv-dossier' ); ?></label>
             <select id="cv_status" name="cv_status">
@@ -150,6 +164,32 @@ class CV_Dossier_Context {
         <p>
             <label for="cv_actors"><?php esc_html_e( 'Attori/Enti coinvolti (separati da virgola)', 'cv-dossier' ); ?></label><br />
             <input type="text" id="cv_actors" name="cv_actors" style="width:100%;" value="<?php echo esc_attr( $actors ); ?>" />
+        </p>
+        <hr />
+        <h4><?php esc_html_e( 'Componenti aggiuntivi del dossier', 'cv-dossier' ); ?></h4>
+        <p><?php esc_html_e( 'Scegli quali elementi mostrare automaticamente nella pagina del dossier.', 'cv-dossier' ); ?></p>
+        <p>
+            <label>
+                <input type="checkbox" name="cv_show_context" value="1" <?php checked( $show_context ); ?> />
+                <?php esc_html_e( 'Mostra la scheda riassuntiva automaticamente nel dossier', 'cv-dossier' ); ?>
+            </label>
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" name="cv_show_timeline" value="1" <?php checked( $show_timeline ); ?> />
+                <?php esc_html_e( 'Mostra la timeline degli eventi del dossier', 'cv-dossier' ); ?>
+            </label>
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" name="cv_show_map" value="1" <?php checked( $show_map ); ?> />
+                <?php esc_html_e( 'Mostra la mappa degli eventi del dossier', 'cv-dossier' ); ?>
+            </label>
+        </p>
+        <p>
+            <label for="cv_dossier_map_height"><?php esc_html_e( 'Altezza della mappa del dossier (px)', 'cv-dossier' ); ?></label>
+            <input type="number" id="cv_dossier_map_height" name="cv_dossier_map_height" min="240" max="800" step="10" value="<?php echo esc_attr( $map_height ); ?>" />
+            <span class="description"><?php esc_html_e( 'Imposta un valore tra 240 e 800 pixel. Predefinito: 380.', 'cv-dossier' ); ?></span>
         </p>
         <?php
     }
@@ -238,6 +278,20 @@ class CV_Dossier_Context {
             $actors  = isset( $_POST['cv_actors'] ) ? sanitize_text_field( wp_unslash( $_POST['cv_actors'] ) ) : '';
             update_post_meta( $post_id, '_cv_facts',  $facts );
             update_post_meta( $post_id, '_cv_actors', $actors );
+
+            if ( isset( $_POST['cv_dossier_meta_present'] ) ) {
+                $show_context  = isset( $_POST['cv_show_context'] ) ? '1' : '0';
+                $show_timeline = isset( $_POST['cv_show_timeline'] ) ? '1' : '0';
+                $show_map      = isset( $_POST['cv_show_map'] ) ? '1' : '0';
+
+                update_post_meta( $post_id, '_cv_show_context', $show_context );
+                update_post_meta( $post_id, '_cv_show_timeline', $show_timeline );
+                update_post_meta( $post_id, '_cv_show_map', $show_map );
+
+                $map_height_input = array_key_exists( 'cv_dossier_map_height', $_POST ) ? wp_unslash( $_POST['cv_dossier_map_height'] ) : '';
+                $map_height       = $this->sanitize_map_height( $map_height_input, 380 );
+                update_post_meta( $post_id, '_cv_dossier_map_height', $map_height );
+            }
         }
 
         // Event fields
@@ -392,7 +446,8 @@ class CV_Dossier_Context {
 
         $post_id = get_queried_object_id();
         if ( $post_id && is_singular( 'post' ) ) {
-            if ( get_post_meta( $post_id, '_cv_dossier_id', true ) ) {
+            $linked_dossier = intval( get_post_meta( $post_id, '_cv_dossier_id', true ) );
+            if ( $linked_dossier && $this->is_dossier_feature_enabled( $linked_dossier, '_cv_show_context', true ) ) {
                 $needs_assets = true;
             }
 
@@ -497,10 +552,14 @@ class CV_Dossier_Context {
     }
 
     public function auto_context_in_post( $content ) {
-        if ( is_singular('post') && in_the_loop() && is_main_query() ) {
+        if ( ! in_the_loop() || ! is_main_query() ) {
+            return $content;
+        }
+
+        if ( is_singular('post') ) {
             $prepend = '';
             $dossier_id = intval( get_post_meta( get_the_ID(), '_cv_dossier_id', true ) );
-            if ( $dossier_id ) {
+            if ( $dossier_id && $this->is_dossier_feature_enabled( $dossier_id, '_cv_show_context', true ) ) {
                 $card = $this->render_context_card( $dossier_id, true );
                 if ( $card ) {
                     $this->ensure_front_assets();
@@ -516,8 +575,63 @@ class CV_Dossier_Context {
             if ( $prepend ) {
                 $content = $prepend . $content;
             }
+            return $content;
         }
+
+        if ( is_singular( 'cv_dossier' ) ) {
+            $post_id = get_the_ID();
+            $append  = '';
+
+            if ( ! has_shortcode( $content, 'cv_dossier_context' ) && $this->is_dossier_feature_enabled( $post_id, '_cv_show_context', true ) ) {
+                $append .= $this->sc_context( [ 'id' => $post_id ] );
+            }
+
+            if ( ! has_shortcode( $content, 'cv_dossier_timeline' ) && $this->is_dossier_feature_enabled( $post_id, '_cv_show_timeline', true ) ) {
+                $append .= $this->sc_timeline( [ 'id' => $post_id ] );
+            }
+
+            $has_markers = $this->dossier_has_map_markers( $post_id );
+
+            if ( ! has_shortcode( $content, 'cv_dossier_map' ) && $this->is_dossier_feature_enabled( $post_id, '_cv_show_map', $has_markers ) ) {
+                $map_height_meta = get_post_meta( $post_id, '_cv_dossier_map_height', true );
+                $map_markup      = $this->sc_map( [
+                    'id'     => $post_id,
+                    'height' => $map_height_meta,
+                ] );
+                if ( $map_markup ) {
+                    $append .= $map_markup;
+                }
+            }
+
+            if ( $append ) {
+                $content .= $append;
+            }
+        }
+
         return $content;
+    }
+
+    private function is_dossier_feature_enabled( $post_id, $meta_key, $default = false ) {
+        $post_id = intval( $post_id );
+        if ( $post_id <= 0 ) {
+            return (bool) $default;
+        }
+
+        if ( ! metadata_exists( 'post', $post_id, $meta_key ) ) {
+            return (bool) $default;
+        }
+
+        $value = get_post_meta( $post_id, $meta_key, true );
+
+        if ( '' === $value ) {
+            return (bool) $default;
+        }
+
+        return $this->interpret_map_enabled_meta( $value );
+    }
+
+    private function dossier_has_map_markers( $dossier_id ) {
+        return ! empty( $this->get_dossier_map_markers( $dossier_id ) );
     }
 
     public function mb_post_map( $post ) {
@@ -1005,7 +1119,15 @@ class CV_Dossier_Context {
     }
 
     public function sc_context( $atts ) {
-        $id = intval( $atts['id'] ?? 0 );
+        $id = $this->resolve_dossier_shortcode_id( $atts );
+        if ( ! $id ) {
+            return '';
+        }
+
+        if ( ! $this->is_dossier_feature_enabled( $id, '_cv_show_context', true ) ) {
+            return '';
+        }
+
         $card = $this->render_context_card( $id, false );
         if ( $card ) {
             $this->ensure_front_assets();
@@ -1079,8 +1201,14 @@ class CV_Dossier_Context {
     }
 
     public function sc_timeline( $atts ) {
-        $id = intval( $atts['id'] ?? 0 );
-        if ( ! $id ) return '';
+        $id = $this->resolve_dossier_shortcode_id( $atts );
+        if ( ! $id ) {
+            return '';
+        }
+
+        if ( ! $this->is_dossier_feature_enabled( $id, '_cv_show_timeline', true ) ) {
+            return '';
+        }
         $events = get_posts([
             'post_type' => 'cv_dossier_event',
             'numberposts' => -1,
@@ -1089,26 +1217,40 @@ class CV_Dossier_Context {
             'orderby'  => 'meta_value',
             'order'    => 'ASC',
         ]);
-        if ( ! $events ) return '<p>' . esc_html__( 'Nessun evento in timeline.', 'cv-dossier' ) . '</p>';
+        if ( ! $events ) {
+            return '<p>' . esc_html__( 'Nessun evento in timeline.', 'cv-dossier' ) . '</p>';
+        }
 
         $this->ensure_front_assets();
 
         $out = '<div class="cv-timeline" data-ga4="timeline">';
         foreach ( $events as $e ) {
-            $date  = esc_html( get_post_meta($e->ID,'_cv_date',true) );
-            $place = esc_html( get_post_meta($e->ID,'_cv_place',true) );
-            $out  .= '<div class="cv-tl-item">';
-            $out  .= '<div class="cv-tl-date">'. $date .'</div>';
-            $out  .= '<div class="cv-tl-content"><h4>'. esc_html($e->post_title) .'</h4>';
-            if ( $place ) $out .= '<div class="cv-tl-place">'. $place .'</div>';
-            $out  .= wpautop( esc_html( wp_strip_all_tags($e->post_content) ) ) . '</div></div>';
+            $date     = esc_html( get_post_meta( $e->ID, '_cv_date', true ) );
+            $place    = esc_html( get_post_meta( $e->ID, '_cv_place', true ) );
+            $content  = apply_filters( 'cv_dossier_timeline_item_content', $e->post_content, $e );
+            $content  = is_string( $content ) ? trim( $content ) : '';
+            $content  = $content !== '' ? wp_kses_post( wpautop( $content ) ) : '';
+
+            $out .= '<div class="cv-tl-item">';
+            $out .= '<div class="cv-tl-date">' . $date . '</div>';
+            $out .= '<div class="cv-tl-content"><h4>' . esc_html( get_the_title( $e ) ) . '</h4>';
+
+            if ( $place ) {
+                $out .= '<div class="cv-tl-place">' . $place . '</div>';
+            }
+
+            if ( $content ) {
+                $out .= $content;
+            }
+
+            $out .= '</div></div>';
         }
         $out .= '</div>';
         return $out;
     }
 
     public function sc_map( $atts ) {
-        $id = intval( $atts['id'] ?? 0 );
+        $id = $this->resolve_dossier_shortcode_id( $atts );
         if ( ! $id ) {
             return '';
         }
@@ -1116,37 +1258,17 @@ class CV_Dossier_Context {
         $height_raw = $atts['height'] ?? '';
         $height     = $this->sanitize_map_height( $height_raw, 380 );
 
-        $this->ensure_front_assets( true );
-
-        $events = get_posts([
-            'post_type'  => 'cv_dossier_event',
-            'numberposts'=> -1,
-            'post_parent'=> $id,
-        ]);
-        $markers = [];
-        foreach ( $events as $e ) {
-            $lat_raw = get_post_meta( $e->ID, '_cv_lat', true );
-            $lng_raw = get_post_meta( $e->ID, '_cv_lng', true );
-
-            $has_lat = ( '' !== $lat_raw && null !== $lat_raw );
-            $has_lng = ( '' !== $lng_raw && null !== $lng_raw );
-
-            if ( ! $has_lat || ! $has_lng ) {
-                continue;
-            }
-
-            if ( ! is_numeric( $lat_raw ) || ! is_numeric( $lng_raw ) ) {
-                continue;
-            }
-
-            $markers[] = [
-                'title' => sanitize_text_field( $e->post_title ),
-                'lat'   => floatval( $lat_raw ),
-                'lng'   => floatval( $lng_raw ),
-                'place' => sanitize_text_field( get_post_meta( $e->ID, '_cv_place', true ) ),
-                'date'  => sanitize_text_field( get_post_meta( $e->ID, '_cv_date', true ) ),
-            ];
+        $default_enabled = $this->dossier_has_map_markers( $id );
+        if ( ! $this->is_dossier_feature_enabled( $id, '_cv_show_map', $default_enabled ) ) {
+            return '';
         }
+
+        $markers = $this->get_dossier_map_markers( $id );
+        if ( empty( $markers ) ) {
+            return '';
+        }
+
+        $this->ensure_front_assets( true );
         $id_attr          = 'cvmap_' . $id . '_' . wp_generate_password( 6, false );
         $instructions_id  = $id_attr . '_instructions';
         $instructions_txt = __( 'Trascina la mappa per esplorare i punti di interesse. Lo zoom è disabilitato per mantenere la panoramica.', 'cv-dossier' );
@@ -1209,6 +1331,9 @@ class CV_Dossier_Context {
                         }
                         popup += '</p>';
                     }
+                    if (marker.description) {
+                        popup += '<p class="cv-map-popup__excerpt">' + marker.description + '</p>';
+                    }
                     popup += '</div>';
                     L.marker([marker.lat, marker.lng]).addTo(map).bindPopup(popup);
                     bounds.push([marker.lat, marker.lng]);
@@ -1237,6 +1362,85 @@ class CV_Dossier_Context {
         </script>
         <?php
         return ob_get_clean();
+    }
+
+    private function resolve_dossier_shortcode_id( $atts ) {
+        $id = 0;
+
+        if ( isset( $atts['id'] ) ) {
+            $id = intval( $atts['id'] );
+        }
+
+        if ( $id > 0 ) {
+            return $id;
+        }
+
+        global $post;
+
+        if ( $post instanceof WP_Post && 'cv_dossier' === $post->post_type ) {
+            return (int) $post->ID;
+        }
+
+        return 0;
+    }
+
+    private function get_dossier_map_markers( $dossier_id ) {
+        $dossier_id = intval( $dossier_id );
+        if ( $dossier_id <= 0 ) {
+            return [];
+        }
+
+        if ( isset( $this->dossier_markers_cache[ $dossier_id ] ) ) {
+            return $this->dossier_markers_cache[ $dossier_id ];
+        }
+
+        $events = get_posts([
+            'post_type'   => 'cv_dossier_event',
+            'numberposts' => -1,
+            'post_parent' => $dossier_id,
+        ]);
+
+        $markers = [];
+
+        foreach ( $events as $event ) {
+            $lat_raw = get_post_meta( $event->ID, '_cv_lat', true );
+            $lng_raw = get_post_meta( $event->ID, '_cv_lng', true );
+
+            if ( '' === $lat_raw || null === $lat_raw || '' === $lng_raw || null === $lng_raw ) {
+                continue;
+            }
+
+            if ( ! is_numeric( $lat_raw ) || ! is_numeric( $lng_raw ) ) {
+                continue;
+            }
+
+            $raw_description = wp_strip_all_tags( $event->post_content );
+            $raw_description = preg_replace( '/\s+/u', ' ', $raw_description );
+            if ( null === $raw_description ) {
+                $raw_description = '';
+            }
+            $raw_description = trim( $raw_description );
+            $description     = '';
+
+            if ( '' !== $raw_description ) {
+                $description = sanitize_textarea_field( wp_trim_words( $raw_description, 50, '…' ) );
+            }
+
+            $markers[] = [
+                'title'       => sanitize_text_field( $event->post_title ),
+                'lat'         => floatval( $lat_raw ),
+                'lng'         => floatval( $lng_raw ),
+                'place'       => sanitize_text_field( get_post_meta( $event->ID, '_cv_place', true ) ),
+                'date'        => sanitize_text_field( get_post_meta( $event->ID, '_cv_date', true ) ),
+                'description' => $description,
+            ];
+        }
+
+        wp_reset_postdata();
+
+        $this->dossier_markers_cache[ $dossier_id ] = $markers;
+
+        return $markers;
     }
 
     public function ajax_follow() {
