@@ -396,9 +396,14 @@ class CV_Dossier_Context {
                 $needs_assets = true;
             }
 
-            $markers      = get_post_meta( $post_id, '_cv_map_markers', true );
-            $map_enabled  = get_post_meta( $post_id, '_cv_map_enabled', true );
-            $show_map     = ( '0' !== $map_enabled );
+            $markers           = get_post_meta( $post_id, '_cv_map_markers', true );
+            $toggle_state      = $this->get_map_toggle_state( $post_id );
+            $has_toggle_meta   = $toggle_state['has_meta'];
+            $show_map          = $toggle_state['is_enabled'];
+
+            if ( ! $has_toggle_meta ) {
+                $show_map = true;
+            }
 
             if ( $show_map && is_array( $markers ) && ! empty( $markers ) ) {
                 $needs_assets  = true;
@@ -522,15 +527,20 @@ class CV_Dossier_Context {
             $markers = [];
         }
 
-        $map_enabled_meta = get_post_meta( $post->ID, '_cv_map_enabled', true );
-        $is_map_enabled   = ( '0' !== $map_enabled_meta );
+        $toggle_state     = $this->get_map_toggle_state( $post->ID );
+        $has_toggle_meta  = $toggle_state['has_meta'];
+        $is_map_enabled   = $toggle_state['is_enabled'];
+
+        if ( ! $has_toggle_meta ) {
+            $is_map_enabled = true;
+        }
         $map_height_meta  = get_post_meta( $post->ID, '_cv_map_height', true );
         $map_height       = $this->sanitize_map_height( $map_height_meta );
 
         echo '<input type="hidden" name="cv_map_markers_present" value="1" />';
-        echo '<p><label><input type="checkbox" name="cv_map_enabled" value="1"' . checked( true, $is_map_enabled, false ) . ' /> ' . esc_html__( 'Mostra la mappa nell&#39;articolo', 'cv-dossier' ) . '</label></p>';
+        echo '<p><label><input type="checkbox" name="cv_map_enabled" value="1"' . checked( true, $is_map_enabled, false ) . ' /> ' . esc_html__( 'Mostra la mappa nell\'articolo', 'cv-dossier' ) . '</label></p>';
         echo '<p><label for="cv_map_height">' . esc_html__( 'Altezza della mappa (px)', 'cv-dossier' ) . '</label> <input type="number" id="cv_map_height" name="cv_map_height" class="small-text" min="240" max="800" step="10" value="' . esc_attr( $map_height ) . '" /> <span class="description">' . esc_html__( 'Imposta un valore tra 240 e 800 pixel. Predefinito: 360.', 'cv-dossier' ) . '</span></p>';
-        echo '<p class="description">' . esc_html__( 'Aggiungi dei punti sulla mappa indicando coordinate (latitudine e longitudine), contenuti descrittivi e, facoltativamente, un&#39;immagine. I lettori potranno aprire la foto a schermo intero.', 'cv-dossier' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Aggiungi dei punti sulla mappa indicando coordinate (latitudine e longitudine), contenuti descrittivi e, facoltativamente, un\'immagine. I lettori potranno aprire la foto a schermo intero.', 'cv-dossier' ) . '</p>';
         echo '<div id="cv-map-markers" class="cv-map-markers">';
 
         if ( ! empty( $markers ) ) {
@@ -641,8 +651,15 @@ class CV_Dossier_Context {
             return '';
         }
 
-        $map_enabled = get_post_meta( $post_id, '_cv_map_enabled', true );
-        if ( '0' === $map_enabled ) {
+        $toggle_state = $this->get_map_toggle_state( $post_id );
+        $has_toggle   = $toggle_state['has_meta'];
+        $show_map     = $toggle_state['is_enabled'];
+
+        if ( ! $has_toggle ) {
+            $show_map = true;
+        }
+
+        if ( ! $show_map ) {
             return '';
         }
 
@@ -846,15 +863,134 @@ class CV_Dossier_Context {
         return $url;
     }
 
-    private function sanitize_map_height( $value ) {
+    private function get_map_toggle_state( $post_id ) {
+        $raw_value = get_post_meta( $post_id, '_cv_map_enabled', true );
+        $has_meta  = metadata_exists( 'post', $post_id, '_cv_map_enabled' );
+
+        if ( $has_meta ) {
+            if ( is_array( $raw_value ) ) {
+                $has_meta = false;
+            } elseif ( is_string( $raw_value ) ) {
+                $trimmed = trim( $raw_value );
+                if ( '' === $trimmed ) {
+                    $has_meta = false;
+                }
+            }
+        }
+
+        return [
+            'has_meta'   => $has_meta,
+            'is_enabled' => $this->interpret_map_enabled_meta( $raw_value ),
+        ];
+    }
+
+    private function interpret_map_enabled_meta( $value ) {
+        if ( is_array( $value ) ) {
+            return false;
+        }
+
+        if ( is_bool( $value ) ) {
+            return $value;
+        }
+
+        if ( is_int( $value ) ) {
+            return ( 0 !== $value );
+        }
+
+        if ( is_string( $value ) ) {
+            $normalized = strtolower( trim( $value ) );
+
+            if ( '' === $normalized ) {
+                return false;
+            }
+
+            if ( is_numeric( $normalized ) ) {
+                return intval( $normalized ) !== 0;
+            }
+
+            if ( in_array( $normalized, [ 'true', 'yes', 'on', 'enabled' ], true ) ) {
+                return true;
+            }
+
+            if ( in_array( $normalized, [ 'false', 'no', 'off', 'disabled' ], true ) ) {
+                return false;
+            }
+        }
+
+        if ( is_numeric( $value ) ) {
+            return intval( $value ) !== 0;
+        }
+
+        return false;
+    }
+
+    private function sanitize_map_height( $value, $default = 360 ) {
         if ( is_array( $value ) ) {
             $value = '';
         }
 
-        $value = intval( $value );
+        $default = intval( $default );
+        if ( $default <= 0 ) {
+            $default = 360;
+        }
+
+        if ( $default < 240 ) {
+            $default = 240;
+        }
+
+        if ( $default > 800 ) {
+            $default = 800;
+        }
+
+        if ( is_scalar( $value ) ) {
+            $normalized = (string) $value;
+            $normalized = preg_replace( '/[\x{00A0}\s]+/u', '', $normalized );
+            if ( null === $normalized ) {
+                $normalized = '';
+            }
+
+            $has_comma = strpos( $normalized, ',' ) !== false;
+            $has_dot   = strpos( $normalized, '.' ) !== false;
+
+            if ( $has_comma && $has_dot ) {
+                if ( strrpos( $normalized, ',' ) > strrpos( $normalized, '.' ) ) {
+                    $normalized = str_replace( '.', '', $normalized );
+                    $normalized = str_replace( ',', '.', $normalized );
+                } else {
+                    $normalized = str_replace( ',', '', $normalized );
+                }
+            } elseif ( $has_comma ) {
+                $parts = explode( ',', $normalized );
+                if ( count( $parts ) === 2 && strlen( $parts[1] ) <= 2 ) {
+                    $normalized = str_replace( ',', '.', $normalized );
+                } else {
+                    $normalized = str_replace( ',', '', $normalized );
+                }
+            } elseif ( $has_dot ) {
+                $parts = explode( '.', $normalized );
+                if ( count( $parts ) === 2 && strlen( $parts[1] ) <= 2 ) {
+                    // Leave decimal notation untouched.
+                } else {
+                    $normalized = str_replace( '.', '', $normalized );
+                }
+            }
+
+            $normalized = preg_replace( '/[^0-9\.-]/', '', $normalized );
+            if ( null === $normalized ) {
+                $normalized = '';
+            }
+
+            if ( '' !== $normalized ) {
+                $value = (int) floor( floatval( $normalized ) );
+            } else {
+                $value = 0;
+            }
+        } else {
+            $value = 0;
+        }
 
         if ( $value <= 0 ) {
-            $value = 360;
+            $value = $default;
         }
 
         if ( $value < 240 ) {
@@ -972,9 +1108,14 @@ class CV_Dossier_Context {
     }
 
     public function sc_map( $atts ) {
-        $id     = intval( $atts['id'] ?? 0 );
-        $height = preg_replace( '/[^0-9]/', '', $atts['height'] ?? '380' );
-        if ( ! $id ) return '';
+        $id = intval( $atts['id'] ?? 0 );
+        if ( ! $id ) {
+            return '';
+        }
+
+        $height_raw = $atts['height'] ?? '';
+        $height     = $this->sanitize_map_height( $height_raw, 380 );
+
         $this->ensure_front_assets( true );
 
         $events = get_posts([
@@ -984,17 +1125,27 @@ class CV_Dossier_Context {
         ]);
         $markers = [];
         foreach ( $events as $e ) {
-            $lat = get_post_meta( $e->ID, '_cv_lat', true );
-            $lng = get_post_meta( $e->ID, '_cv_lng', true );
-            if ( $lat && $lng ) {
-                $markers[] = [
-                    'title' => sanitize_text_field( $e->post_title ),
-                    'lat'   => floatval( $lat ),
-                    'lng'   => floatval( $lng ),
-                    'place' => sanitize_text_field( get_post_meta( $e->ID, '_cv_place', true ) ),
-                    'date'  => sanitize_text_field( get_post_meta( $e->ID, '_cv_date', true ) ),
-                ];
+            $lat_raw = get_post_meta( $e->ID, '_cv_lat', true );
+            $lng_raw = get_post_meta( $e->ID, '_cv_lng', true );
+
+            $has_lat = ( '' !== $lat_raw && null !== $lat_raw );
+            $has_lng = ( '' !== $lng_raw && null !== $lng_raw );
+
+            if ( ! $has_lat || ! $has_lng ) {
+                continue;
             }
+
+            if ( ! is_numeric( $lat_raw ) || ! is_numeric( $lng_raw ) ) {
+                continue;
+            }
+
+            $markers[] = [
+                'title' => sanitize_text_field( $e->post_title ),
+                'lat'   => floatval( $lat_raw ),
+                'lng'   => floatval( $lng_raw ),
+                'place' => sanitize_text_field( get_post_meta( $e->ID, '_cv_place', true ) ),
+                'date'  => sanitize_text_field( get_post_meta( $e->ID, '_cv_date', true ) ),
+            ];
         }
         $id_attr          = 'cvmap_' . $id . '_' . wp_generate_password( 6, false );
         $instructions_id  = $id_attr . '_instructions';
