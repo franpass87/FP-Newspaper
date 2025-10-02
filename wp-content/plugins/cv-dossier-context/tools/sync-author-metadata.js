@@ -2,11 +2,26 @@
 /* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 
-const APPLY_FLAG = process.argv.find((arg) => arg.startsWith('--apply='));
-const DOCS_FLAG = process.argv.includes('--docs');
-const APPLY = APPLY_FLAG ? APPLY_FLAG.split('=')[1] === 'true' : false;
+const argv = yargs(hideBin(process.argv))
+  .option('apply', {
+    type: 'boolean',
+    description: 'Apply changes',
+    default: false,
+  })
+  .option('docs', {
+    type: 'boolean',
+    description: 'Show documentation',
+    default: false,
+  })
+  .help(false)
+  .version(false)
+  .argv;
 
+const APPLY = argv.apply;
+const DOCS_FLAG = argv.docs;
 const AUTHOR = {
   name: 'Francesco Passeri',
   email: 'info@francescopasseri.com',
