@@ -1,8 +1,20 @@
 {
   "name": "cronacaviterbo/cv-dossier-context",
-  "description": "WordPress plugin for CV Dossier & Context.",
+  "description": "Gestisce dossier tematici con schede riassuntive automatiche, timeline eventi e mappe interattive. Include follow-up email per redazioni WordPress.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
+  "homepage": "https://francescopasseri.com",
+  "support": {
+    "issues": "https://francescopasseri.com"
+  },
+  "authors": [
+    {
+      "name": "Francesco Passeri",
+      "email": "info@francescopasseri.com",
+      "homepage": "https://francescopasseri.com",
+      "role": "Developer"
+    }
+  ],
   "require": {
     "php": ">=8.0"
   },
@@ -29,6 +41,15 @@
       "rm -rf vendor",
       "@composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader",
       "composer dump-autoload -o --classmap-authoritative"
+    ],
+    "sync:author": [
+      "node tools/sync-author-metadata.js --apply=${APPLY:-false}"
+    ],
+    "sync:docs": [
+      "node tools/sync-author-metadata.js --docs --apply=${APPLY:-false}"
+    ],
+    "changelog:from-git": [
+      "npx --yes conventional-changelog-cli -p angular -i CHANGELOG.md -s"
     ]
   }
 }

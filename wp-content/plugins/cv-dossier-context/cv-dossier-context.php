@@ -1,10 +1,23 @@
 <?php
 /**
  * Plugin Name: CV Dossier & Context
- * Description: Dossier tematici con scheda riassuntiva automatica, timeline, mappa e follow-up per Cronaca di Viterbo.
+ * Plugin URI: https://francescopasseri.com
+ * Description: Gestisce dossier tematici con schede riassuntive automatiche, timeline eventi e mappe interattive. Include follow-up email per redazioni WordPress.
  * Version: 1.0.2
- * Author: Cronaca di Viterbo
+ * Author: Francesco Passeri
+ * Author URI: https://francescopasseri.com
  * License: GPLv2 or later
+ */
+
+/**
+ * Main plugin bootstrap for CV Dossier & Context.
+ *
+ * Gestisce dossier tematici con schede riassuntive automatiche, timeline eventi e mappe interattive. Include follow-up email per
+ * redazioni WordPress.
+ *
+ * @package CV_Dossier_Context
+ * @author Francesco Passeri
+ * @link https://francescopasseri.com
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -14,6 +27,12 @@ if ( is_readable( $autoload ) ) {
     require $autoload;
 }
 
+/**
+ * Core plugin functionality for CV Dossier & Context.
+ *
+ * @author Francesco Passeri
+ * @link https://francescopasseri.com
+ */
 class CV_Dossier_Context {
     const VERSION = '1.0.2';
     const NONCE   = 'cv_dossier_nonce';
