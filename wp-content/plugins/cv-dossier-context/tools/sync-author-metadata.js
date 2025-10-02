@@ -179,7 +179,11 @@ function ensureComposerJson() {
       data.scripts = {};
     }
     const existing = data.scripts[name];
-    if (!existing || JSON.stringify(existing) !== JSON.stringify([command])) {
+    if (
+      !Array.isArray(existing) ||
+      existing.length !== 1 ||
+      existing[0] !== command
+    ) {
       data.scripts[name] = [command];
       changed = true;
     }
