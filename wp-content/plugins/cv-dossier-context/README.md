@@ -1,167 +1,84 @@
-# CV Dossier & Context Plugin
+# CV Dossier & Context
 
-Un plugin WordPress per Cronaca di Viterbo che gestisce dossier tematici con schede riassuntive automatiche, timeline, mappe e sistema di follow-up.
+| | |
+|---|---|
+| **Name** | CV Dossier & Context |
+| **Version** | 1.0.2 |
+| **Author** | [Francesco Passeri](https://francescopasseri.com) |
+| **Requires WordPress** | 6.0 |
+| **Tested up to** | 6.4 |
+| **Requires PHP** | 8.0 |
+| **License** | GPLv2 or later |
+| **Text Domain** | `cv-dossier` |
 
-## Caratteristiche
+## What it does
 
-### Custom Post Types
-- **Dossier** (`cv_dossier`): Contenuti principali dei dossier
-- **Eventi Dossier** (`cv_dossier_event`): Eventi timeline collegati ai dossier
+Gestisce dossier tematici con schede riassuntive automatiche, timeline eventi e mappe interattive. Include follow-up email per redazioni WordPress.
 
-### Meta Fields
-#### Dossier
-- **Stato**: Aperto/Chiuso
-- **Score**: Percentuale promesse mantenute (0-100%)
-- **Punti chiave**: Lista di bullet points
-- **Attori/Enti**: Elenco soggetti coinvolti
+## About
 
-#### Eventi
-- **Data**: Data dell'evento (YYYY-MM-DD)
-- **Luogo**: Nome del luogo
-- **Coordinate**: Latitudine e longitudine per la mappa
-- **Dossier di appartenenza**: Parent relationship
+CV Dossier & Context estende WordPress con strumenti editoriali per creare e mantenere dossier tematici. Il plugin automatizza schede riassuntive nei post correlati, integra timeline cronologiche degli eventi e visualizza mappe interattive con i luoghi chiave, includendo anche un sistema di follow-up via email per i lettori interessati.
 
-### Frontend Features
+## Features
 
-#### Context Cards
-Le schede contesto vengono automaticamente inserite nei post collegati a un dossier e mostrano:
-- Badge stato (aperto/chiuso)
-- Titolo del dossier
-- Score delle promesse mantenute
-- Punti chiave principali
-- Attori/Enti coinvolti
-- Data ultimo evento
-- Pulsante per visualizzare tutto il dossier
-- Form per seguire gli aggiornamenti
+- Custom Post Type `cv_dossier` per organizzare dossier con stato, punteggio, punti chiave e attori coinvolti.
+- Custom Post Type `cv_dossier_event` per eventi della timeline con data, luogo e coordinate geografiche.
+- Meta box per collegare rapidamente i post redazionali ai dossier e gestire markers di mappa personalizzati.
+- Shortcode dedicati (`[cv_dossier_context]`, `[cv_dossier_timeline]`, `[cv_dossier_map]`) con parametri per id e altezza della mappa.
+- Sistema di follow-up AJAX con tabella dedicata `wp_cv_dossier_followers`, validazione email e hook `cv_dossier_follow`.
+- Integrazione con Leaflet.js per mappe responsive, inclusa gestione marker, popup e fallback di errore.
+- Localizzazione `cv-dossier` con caricamento automatico dei file MO/PO.
 
-#### Shortcodes
+## Installation
 
-**Context Card**
-```
-[cv_dossier_context id="123"]
-```
+1. Copia la cartella `cv-dossier-context` in `wp-content/plugins/`.
+2. Accedi a **Plugin → Aggiungi nuovo** e attiva *CV Dossier & Context*.
+3. All'attivazione viene creata la tabella `wp_cv_dossier_followers` e vengono registrati i custom post type e le meta box necessarie.
 
-**Timeline**
-```
-[cv_dossier_timeline id="123"]
-```
+## Usage
 
-**Mappa**
-```
-[cv_dossier_map id="123" height="400"]
-```
+### Creare e gestire un dossier
+1. Vai in **Dossier** e crea un nuovo elemento.
+2. Compila stato, punteggio, punti chiave e attori coinvolti.
+3. Seleziona quali componenti (scheda contesto, timeline, mappa) rendere visibili automaticamente.
 
-### Sistema Follow
-- Tabella database dedicata per i follower
-- Form AJAX per l'iscrizione
-- Hook `cv_dossier_follow` per integrazioni esterne (es. Brevo)
-- Validazione email lato client e server
+### Gestire eventi di timeline
+1. Vai in **Eventi Dossier** per aggiungere eventi cronologici.
+2. Inserisci data, luogo, eventuali coordinate e collega l'evento al dossier.
+3. Gli eventi popolano automaticamente timeline e mappa del dossier.
 
-### Integrazione Mappe
-- Utilizza Leaflet.js per le mappe interattive
-- Markers automatici basati sugli eventi con coordinate
-- Popup informativi con dettagli evento
-- Auto-fit della vista per includere tutti i markers
+### Collegare un post a un dossier
+1. Modifica un post standard e usa la meta box **Dossier collegato**.
+2. Seleziona il dossier pertinente per mostrare la scheda riassuntiva nel contenuto.
+3. Facoltativamente gestisci markers di mappa e stato di visualizzazione.
 
-## Installazione
+### Shortcode disponibili
+- `[cv_dossier_context id="123"]` visualizza la scheda riassuntiva del dossier.
+- `[cv_dossier_timeline id="123"]` mostra la timeline degli eventi.
+- `[cv_dossier_map id="123" height="400"]` rende disponibile una mappa Leaflet con i marker degli eventi.
 
-1. Caricare la cartella del plugin in `wp-content/plugins/`
-2. Attivare il plugin dal pannello WordPress
-3. Il plugin creerà automaticamente:
-   - I custom post types
-   - La tabella database per i follower
-   - Le cartelle CSS e JS con gli asset
+## Hooks & Filters
 
-## Utilizzo
+| Tipo | Nome | Descrizione |
+|------|------|-------------|
+| Action | `cv_dossier_follow` | Scatta dopo una nuova iscrizione di follow-up e riceve `$dossier_id` e `$email`. |
+| Filter | `cv_dossier_timeline_item_content` | Permette di modificare il contenuto di ciascun evento nella timeline prima del rendering. |
 
-### Creare un Dossier
-1. Andare su "Dossier" nel menu admin
-2. Creare un nuovo dossier compilando i campi meta
-3. Impostare stato, score, punti chiave e attori
+## Support
 
-### Aggiungere Eventi Timeline
-1. Andare su "Eventi Dossier" nel menu admin
-2. Creare un nuovo evento
-3. Collegarlo al dossier appropriato
-4. Inserire data, luogo e coordinate se disponibili
+Per assistenza e richieste personalizzate visita [https://francescopasseri.com](https://francescopasseri.com) e utilizza i canali di contatto disponibili.
 
-### Collegare Post a Dossier
-1. Durante la modifica di un post
-2. Utilizzare la meta box "Dossier collegato" nella sidebar
-3. Selezionare il dossier di riferimento
-4. La context card apparirà automaticamente nel post
+## Development scripts
 
-## Personalizzazione
+Esegui le attività ripetibili di sincronizzazione e changelog con i comandi:
 
-### CSS
-Il file `/css/cv-dossier.css` contiene tutti gli stili e può essere personalizzato.
-
-### JavaScript
-Il file `/js/cv-dossier.js` gestisce l'interattività frontend e include:
-- Gestione form follow
-- Tracking analytics (Google Analytics 4)
-- Validazione email
-- Accessibility enhancements
-
-### Hook per Sviluppatori
-
-**Azione dopo follow dossier**
-```php
-add_action('cv_dossier_follow', function($dossier_id, $email) {
-    // Integrazione con servizi esterni
-    // es. aggiungere a lista Brevo/Mailchimp
-});
+```bash
+composer sync:author # aggiorna i metadati autore (usa APPLY=true per scrivere)
+composer sync:docs   # sincronizza documentazione (usa APPLY=true per scrivere)
+composer changelog:from-git
 ```
 
-## Database
+## Assumptions
 
-### Tabella wp_cv_dossier_followers
-```sql
-CREATE TABLE wp_cv_dossier_followers (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    dossier_id BIGINT UNSIGNED NOT NULL,
-    email VARCHAR(190) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY dossier_email (dossier_id, email),
-    KEY dossier_id (dossier_id)
-);
-```
-
-## Sicurezza
-
-- Tutti gli input sono sanitizzati
-- Nonce verification per le azioni AJAX
-- Controlli permissions per edit/save
-- Escape output HTML
-- Validazione email server-side
-
-## Browser Support
-
-- Chrome/Edge (latest)
-- Firefox (latest)  
-- Safari (latest)
-- IE11+ (con degradazione graceful)
-
-## Dipendenze
-
-- WordPress 5.0+
-- jQuery (incluso in WordPress)
-- Leaflet.js (caricato automaticamente dal CDN)
-
-## Licenza
-
-GPLv2 or later
-## Release process
-
-1. Aggiorna il codice e assicurati che i test/lint passino.
-2. Esegui il build script con il bump desiderato, ad esempio:
-   ```bash
-   bash build.sh --bump=patch
-   ```
-   oppure imposta manualmente la versione:
-   ```bash
-   bash build.sh --set-version=1.2.3
-   ```
-3. Carica lo zip generato in `build/` nell'admin di WordPress oppure allegalo alla release.
-4. Per rilasci automatizzati, crea e push un tag `vX.Y.Z` su GitHub: il workflow `build-plugin-zip.yml` produrrà lo zip come artifact `plugin-zip`.
+- Compatibilità WordPress verificata fino alla versione 6.4 sulla base dell'ambiente disponibile durante la revisione.
+- L'assistenza è fornita tramite il sito personale di Francesco Passeri in assenza di una pagina issue pubblica dedicata.

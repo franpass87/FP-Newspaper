@@ -1,0 +1,19 @@
+{
+  "task": "sync-author-and-docs",
+  "version": 1,
+  "progress_percent": 100,
+  "steps_completed": [
+    "scan_repository",
+    "extract_context",
+    "generate_description",
+    "sync_metadata",
+    "sync_readmes",
+    "update_changelog",
+    "update_docs",
+    "lint_and_verify",
+    "final_report_prepared"
+  ],
+  "dry_run": false,
+  "last_run": "2025-10-02T09:32:35.009793+00:00",
+  "short_description": "Gestisce dossier tematici con schede riassuntive automatiche, timeline eventi e mappe interattive. Include follow-up email per redazioni WordPress."
+}
