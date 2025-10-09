@@ -1,0 +1,52 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build artifacts
+*.log
+*.sql
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.phpintel/
+
+# Composer
+composer.lock
+composer.phar
+
+# NPM
+package-lock.json
+yarn.lock
+
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/upgrade/
+
+# Plugin development
+*.zip
+*.tar.gz
+/build/
+/dist/
+/.wordpress-org/
+
+# Testing
+/tests/coverage/
+.phpunit.result.cache
+
+# Environment
+.env
+.env.local
