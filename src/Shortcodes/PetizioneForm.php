@@ -73,11 +73,13 @@ class PetizioneForm {
 				<?php endif; ?>
 			</div>
 
-			<?php if ( $aperta && ! $is_scaduta ) : ?>
-				<form class="cdv-petizione-form" data-nonce="<?php echo esc_attr( wp_create_nonce( 'cdv_ajax_nonce' ) ); ?>">
-					<h3><?php esc_html_e( 'Firma questa petizione', 'cronaca-di-viterbo' ); ?></h3>
-					
-					<div class="cdv-form-row cdv-form-row-half">
+		<?php if ( $aperta && ! $is_scaduta ) : ?>
+			<form class="cdv-petizione-form" data-nonce="<?php echo esc_attr( wp_create_nonce( 'cdv_ajax_nonce' ) ); ?>">
+				<h3><?php esc_html_e( 'Firma questa petizione', 'cronaca-di-viterbo' ); ?></h3>
+				
+				<input type="hidden" name="petizione_id" value="<?php echo esc_attr( $petizione_id ); ?>">
+				
+				<div class="cdv-form-row cdv-form-row-half">
 						<div class="cdv-form-field">
 							<label for="cdv_firma_nome"><?php esc_html_e( 'Nome *', 'cronaca-di-viterbo' ); ?></label>
 							<input type="text" id="cdv_firma_nome" name="nome" required>

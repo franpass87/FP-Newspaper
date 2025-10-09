@@ -81,9 +81,9 @@ class SondaggioForm {
 				</p>
 			<?php endif; ?>
 
-			<?php if ( $aperto && ! $is_scaduto ) : ?>
-				<form class="cdv-sondaggio-form" data-nonce="<?php echo esc_attr( wp_create_nonce( 'cdv_ajax_nonce' ) ); ?>" data-multiplo="<?php echo esc_attr( $multiplo ? '1' : '0' ); ?>">
-					<div class="cdv-sondaggio-options">
+		<?php if ( $aperto && ! $is_scaduto ) : ?>
+			<form class="cdv-sondaggio-form" data-nonce="<?php echo esc_attr( wp_create_nonce( 'cdv_ajax_nonce' ) ); ?>" data-multiplo="<?php echo esc_attr( $multiplo ? '1' : '0' ); ?>" data-sondaggio-id="<?php echo esc_attr( $sondaggio_id ); ?>">
+				<div class="cdv-sondaggio-options">
 						<?php foreach ( $options as $index => $option ) : ?>
 							<label class="cdv-sondaggio-option">
 								<input type="<?php echo $multiplo ? 'checkbox' : 'radio'; ?>" name="options<?php echo $multiplo ? '[]' : ''; ?>" value="<?php echo esc_attr( $index ); ?>">
