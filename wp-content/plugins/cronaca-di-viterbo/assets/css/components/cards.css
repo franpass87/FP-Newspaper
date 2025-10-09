@@ -1,0 +1,156 @@
+/**
+ * Cards Component
+ * Stili per le card (proposte, eventi, persone)
+ * 
+ * @package CdV
+ */
+
+/* ===== LISTA PROPOSTE ===== */
+.cdv-proposte-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 24px;
+	margin: 24px 0;
+}
+
+.cdv-proposta-card {
+	background: #fff;
+	padding: 20px;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cdv-proposta-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cdv-proposta-card h4 {
+	margin: 0 0 12px 0;
+	font-size: 18px;
+}
+
+.cdv-proposta-meta {
+	display: flex;
+	gap: 12px;
+	margin-bottom: 12px;
+	font-size: 14px;
+	color: #666;
+}
+
+.cdv-proposta-excerpt {
+	margin-bottom: 18px;
+	color: #555;
+}
+
+.cdv-proposta-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.cdv-vote-btn {
+	padding: 8px 16px;
+	background: #f0f0f0;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.cdv-vote-btn:hover {
+	background: #e0e0e0;
+}
+
+.cdv-vote-btn.voted {
+	background: #4a90e2;
+	color: #fff;
+}
+
+/* ===== LISTA EVENTI ===== */
+.cdv-eventi-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+	gap: 24px;
+	margin: 24px 0;
+}
+
+.cdv-evento-card {
+	background: #fff;
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.3s;
+}
+
+.cdv-evento-card:hover {
+	transform: translateY(-4px);
+}
+
+.cdv-evento-thumbnail img {
+	width: 100%;
+	height: 200px;
+	object-fit: cover;
+}
+
+.cdv-evento-content {
+	padding: 20px;
+}
+
+.cdv-evento-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 12px 0;
+	font-size: 14px;
+	color: #666;
+}
+
+/* ===== PERSONA CARD ===== */
+.cdv-persona-card {
+	background: #fff;
+	padding: 24px;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	text-align: center;
+	max-width: 350px;
+	margin: 0 auto;
+}
+
+.cdv-persona-avatar img {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	object-fit: cover;
+	margin-bottom: 18px;
+}
+
+.cdv-persona-ruolo {
+	color: #666;
+	font-size: 14px;
+	margin: 8px 0;
+}
+
+.cdv-persona-contatti {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.cdv-contatto {
+	display: inline-block;
+	padding: 8px 12px;
+	background: #f5f5f5;
+	border-radius: 8px;
+	text-decoration: none;
+	color: #333;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.cdv-contatto:hover {
+	background: #e0e0e0;
+}

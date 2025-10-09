@@ -1,0 +1,282 @@
+/**
+ * Admin Tables Component
+ * Stili per tabelle amministrazione
+ * 
+ * @package CdV
+ */
+
+/* ===== MODERATION TABLE ===== */
+.cdv-moderation-table {
+	margin-top: 24px;
+}
+
+.cdv-moderation-table .column-votes {
+	width: 80px;
+	text-align: center;
+	font-weight: bold;
+}
+
+.cdv-moderation-table .column-actions {
+	width: 200px;
+}
+
+.cdv-moderation-table .column-status {
+	width: 120px;
+}
+
+.cdv-moderation-table .column-author {
+	width: 150px;
+}
+
+/* ===== CUSTOM TABLE STYLES ===== */
+.cdv-admin-table {
+	width: 100%;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.cdv-admin-table thead {
+	background: #f9f9f9;
+	border-bottom: 2px solid #e0e0e0;
+}
+
+.cdv-admin-table th {
+	padding: 12px;
+	text-align: left;
+	font-weight: 600;
+	color: #333;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.cdv-admin-table td {
+	padding: 12px;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.cdv-admin-table tbody tr {
+	transition: background 0.2s;
+}
+
+.cdv-admin-table tbody tr:hover {
+	background: #f9f9f9;
+}
+
+.cdv-admin-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* ===== STATUS BADGES ===== */
+.cdv-status-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.cdv-status-badge.pending {
+	background: #fff8e5;
+	color: #ff9800;
+	border: 1px solid #ffe0b2;
+}
+
+.cdv-status-badge.approved {
+	background: #ecf7ed;
+	color: #46b450;
+	border: 1px solid #c3e6cb;
+}
+
+.cdv-status-badge.rejected {
+	background: #fef7f7;
+	color: #dc3232;
+	border: 1px solid #f5c6cb;
+}
+
+.cdv-status-badge.published {
+	background: #e3f2fd;
+	color: #2196f3;
+	border: 1px solid #bbdefb;
+}
+
+/* ===== TABLE ACTIONS ===== */
+.cdv-table-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.cdv-table-action {
+	padding: 4px 10px;
+	background: #f0f0f0;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 12px;
+	color: #333;
+	text-decoration: none;
+	transition: all 0.2s;
+	cursor: pointer;
+}
+
+.cdv-table-action:hover {
+	background: #e0e0e0;
+	color: #000;
+}
+
+.cdv-table-action.approve {
+	background: #ecf7ed;
+	color: #46b450;
+	border-color: #c3e6cb;
+}
+
+.cdv-table-action.approve:hover {
+	background: #46b450;
+	color: #fff;
+}
+
+.cdv-table-action.reject {
+	background: #fef7f7;
+	color: #dc3232;
+	border-color: #f5c6cb;
+}
+
+.cdv-table-action.reject:hover {
+	background: #dc3232;
+	color: #fff;
+}
+
+.cdv-table-action.view {
+	background: #e3f2fd;
+	color: #2196f3;
+	border-color: #bbdefb;
+}
+
+.cdv-table-action.view:hover {
+	background: #2196f3;
+	color: #fff;
+}
+
+/* ===== BULK ACTIONS BAR ===== */
+.cdv-bulk-actions-bar {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.cdv-bulk-actions-bar select {
+	min-width: 200px;
+}
+
+.cdv-bulk-actions-bar .button {
+	margin: 0;
+}
+
+/* ===== PAGINATION ===== */
+.cdv-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	margin: 20px 0;
+}
+
+.cdv-pagination-item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	text-decoration: none;
+	color: #333;
+	transition: all 0.2s;
+}
+
+.cdv-pagination-item:hover {
+	background: #f0f0f0;
+	border-color: #4a90e2;
+	color: #4a90e2;
+}
+
+.cdv-pagination-item.active {
+	background: #4a90e2;
+	border-color: #4a90e2;
+	color: #fff;
+}
+
+.cdv-pagination-item.disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.cdv-pagination-item.disabled:hover {
+	background: transparent;
+	border-color: #ddd;
+	color: #333;
+}
+
+/* ===== EMPTY STATE ===== */
+.cdv-table-empty {
+	text-align: center;
+	padding: 60px 20px;
+	color: #666;
+}
+
+.cdv-table-empty .dashicons {
+	font-size: 64px;
+	width: 64px;
+	height: 64px;
+	color: #ccc;
+	margin-bottom: 16px;
+}
+
+.cdv-table-empty h3 {
+	margin: 0 0 12px 0;
+	color: #333;
+}
+
+.cdv-table-empty p {
+	margin: 0 0 20px 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+	.cdv-admin-table {
+		font-size: 12px;
+	}
+
+	.cdv-admin-table th,
+	.cdv-admin-table td {
+		padding: 8px;
+	}
+
+	.cdv-bulk-actions-bar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.cdv-bulk-actions-bar select {
+		width: 100%;
+	}
+
+	.cdv-table-actions {
+		flex-direction: column;
+	}
+
+	.cdv-table-action {
+		width: 100%;
+		text-align: center;
+	}
+}

@@ -1,0 +1,33 @@
+/**
+ * Cronaca di Viterbo - Frontend Styles Entry Point
+ * Import di tutti i componenti CSS
+ * 
+ * @package CdV
+ */
+
+/* ===== COMPONENTI ===== */
+@import url('components/forms.css');
+@import url('components/cards.css');
+@import url('components/layouts.css');
+@import url('components/responsive.css');
+
+/* ===== VARIABILI GLOBALI (opzionale per future estensioni) ===== */
+:root {
+	--cdv-primary-color: #4a90e2;
+	--cdv-primary-hover: #357abd;
+	--cdv-secondary-color: #f5f5f5;
+	--cdv-border-radius: 12px;
+	--cdv-border-radius-lg: 16px;
+	--cdv-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
+	--cdv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+	--cdv-shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.15);
+	--cdv-transition: all 0.3s ease;
+}
+
+/* ===== RESET E BASE ===== */
+.cdv-proposta-form-wrap *,
+.cdv-proposta-card *,
+.cdv-evento-card *,
+.cdv-persona-card * {
+	box-sizing: border-box;
+}
