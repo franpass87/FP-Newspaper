@@ -46,10 +46,10 @@
 				window.CdVAdmin.Settings.init();
 			}
 
-			// Log inizializzazione completata
-			if (window.console && window.console.log) {
-				console.log('CdV Admin: Moduli inizializzati correttamente');
-			}
+		// Log inizializzazione completata (development only)
+		if (window.console && window.cdvDebug) {
+			console.log('CdV Admin: Moduli inizializzati correttamente');
+		}
 		}
 	};
 

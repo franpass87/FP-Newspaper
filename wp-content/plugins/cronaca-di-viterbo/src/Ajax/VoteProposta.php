@@ -31,7 +31,7 @@ class VoteProposta {
 	 */
 	public function handle() {
 		// Verifica nonce
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'cdv_nonce' ) ) {
+		if ( ! check_ajax_referer( 'cdv_ajax_nonce', 'nonce', false ) ) {
 			wp_send_json_error(
 				[
 					'message' => __( 'Errore di sicurezza.', 'cronaca-di-viterbo' ),

@@ -98,8 +98,8 @@ class PropostaForm {
 					</label>
 				</div>
 
-				<input type="hidden" name="action" value="cdv_submit_proposta">
-				<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'cdv_nonce' ) ); ?>">
+			<input type="hidden" name="action" value="cdv_submit_proposta">
+			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'cdv_ajax_nonce' ) ); ?>">
 
 				<div class="cdv-form-group">
 					<button type="submit" class="cdv-btn cdv-btn-primary">
