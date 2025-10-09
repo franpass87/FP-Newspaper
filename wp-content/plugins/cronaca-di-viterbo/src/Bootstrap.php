@@ -76,6 +76,7 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/PetizioniList.php';
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/SondaggioForm.php';
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/UserProfile.php';
+		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/MappaInterattiva.php';
 
 		// WPBakery
 		if ( defined( 'WPB_VC_VERSION' ) ) {
@@ -97,6 +98,7 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Services/Compat.php';
 		require_once CDV_PLUGIN_DIR . 'src/Services/Notifiche.php';
 		require_once CDV_PLUGIN_DIR . 'src/Services/Reputazione.php';
+		require_once CDV_PLUGIN_DIR . 'src/Services/VotazioneAvanzata.php';
 
 		// Roles
 		require_once CDV_PLUGIN_DIR . 'src/Roles/Capabilities.php';
@@ -137,6 +139,7 @@ class Bootstrap {
 		add_shortcode( 'cdv_petizioni', [ Shortcodes\PetizioniList::class, 'render' ] );
 		add_shortcode( 'cdv_sondaggio_form', [ Shortcodes\SondaggioForm::class, 'render' ] );
 		add_shortcode( 'cdv_user_profile', [ Shortcodes\UserProfile::class, 'render' ] );
+		add_shortcode( 'cdv_mappa', [ Shortcodes\MappaInterattiva::class, 'render' ] );
 
 		// WPBakery
 		if ( defined( 'WPB_VC_VERSION' ) ) {
@@ -157,6 +160,7 @@ class Bootstrap {
 		new Services\Compat();
 		Services\Notifiche::init();
 		Services\Reputazione::init();
+		Services\VotazioneAvanzata::init();
 	}
 
 	/**
@@ -196,6 +200,7 @@ class Bootstrap {
 		// Crea tabelle database
 		PostTypes\Petizione::create_firme_table();
 		PostTypes\Sondaggio::create_votes_table();
+		Services\VotazioneAvanzata::init(); // Creates votes details table
 
 		// Flush rewrite rules
 		flush_rewrite_rules();
