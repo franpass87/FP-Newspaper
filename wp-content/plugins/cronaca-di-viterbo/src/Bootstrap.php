@@ -259,13 +259,15 @@ class Bootstrap {
 	 * Carica gli assets frontend.
 	 */
 	public function enqueue_frontend_assets() {
+		// CSS principale (entry point modulare)
 		wp_enqueue_style(
 			'cdv-frontend',
-			CDV_PLUGIN_URL . 'assets/css/cdv.css',
+			CDV_PLUGIN_URL . 'assets/css/main.css',
 			[],
 			CDV_VERSION
 		);
 
+		// CSS legacy per retrocompatibilità (opzionale)
 		wp_enqueue_style(
 			'cdv-extended',
 			CDV_PLUGIN_URL . 'assets/css/cdv-extended.css',
@@ -273,14 +275,53 @@ class Bootstrap {
 			CDV_VERSION
 		);
 
+		// JavaScript - Moduli
+		// Carica moduli utilities
 		wp_enqueue_script(
-			'cdv-frontend',
-			CDV_PLUGIN_URL . 'assets/js/cdv.js',
+			'cdv-utils',
+			CDV_PLUGIN_URL . 'assets/js/modules/utils.js',
 			[ 'jquery' ],
 			CDV_VERSION,
 			true
 		);
 
+		// Carica modulo analytics tracker
+		wp_enqueue_script(
+			'cdv-analytics',
+			CDV_PLUGIN_URL . 'assets/js/modules/analytics-tracker.js',
+			[],
+			CDV_VERSION,
+			true
+		);
+
+		// Carica modulo form handler
+		wp_enqueue_script(
+			'cdv-form-handler',
+			CDV_PLUGIN_URL . 'assets/js/modules/form-handler.js',
+			[ 'jquery', 'cdv-analytics' ],
+			CDV_VERSION,
+			true
+		);
+
+		// Carica modulo voting system
+		wp_enqueue_script(
+			'cdv-voting-system',
+			CDV_PLUGIN_URL . 'assets/js/modules/voting-system.js',
+			[ 'jquery', 'cdv-analytics' ],
+			CDV_VERSION,
+			true
+		);
+
+		// JavaScript principale (entry point che inizializza i moduli)
+		wp_enqueue_script(
+			'cdv-frontend',
+			CDV_PLUGIN_URL . 'assets/js/main.js',
+			[ 'jquery', 'cdv-utils', 'cdv-form-handler', 'cdv-voting-system' ],
+			CDV_VERSION,
+			true
+		);
+
+		// Localizza dati per JavaScript
 		wp_localize_script(
 			'cdv-frontend',
 			'cdvData',
