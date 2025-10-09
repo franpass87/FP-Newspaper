@@ -1,0 +1,316 @@
+/**
+ * Cronaca di Viterbo - Frontend Styles
+ * Stili minimal coerenti con Salient theme
+ */
+
+/* ===== FORM PROPOSTA ===== */
+.cdv-proposta-form-wrap {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 24px;
+	background: #fff;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cdv-form-group {
+	margin-bottom: 18px;
+}
+
+.cdv-form-group label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.cdv-form-group input[type="text"],
+.cdv-form-group input[type="email"],
+.cdv-form-group textarea,
+.cdv-form-group select {
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 12px;
+	font-size: 15px;
+	transition: border-color 0.2s;
+}
+
+.cdv-form-group input:focus,
+.cdv-form-group textarea:focus,
+.cdv-form-group select:focus {
+	outline: none;
+	border-color: #4a90e2;
+}
+
+.cdv-checkbox label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.cdv-btn {
+	display: inline-block;
+	padding: 12px 24px;
+	border: none;
+	border-radius: 12px;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.3s;
+	text-decoration: none;
+}
+
+.cdv-btn-primary {
+	background: #4a90e2;
+	color: #fff;
+}
+
+.cdv-btn-primary:hover {
+	background: #357abd;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.cdv-btn-secondary {
+	background: #f5f5f5;
+	color: #333;
+}
+
+.cdv-btn-secondary:hover {
+	background: #e0e0e0;
+}
+
+.cdv-response {
+	margin-top: 18px;
+	padding: 12px;
+	border-radius: 12px;
+	display: none;
+}
+
+.cdv-response.success {
+	display: block;
+	background: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+.cdv-response.error {
+	display: block;
+	background: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}
+
+/* ===== LISTA PROPOSTE ===== */
+.cdv-proposte-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 24px;
+	margin: 24px 0;
+}
+
+.cdv-proposta-card {
+	background: #fff;
+	padding: 20px;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cdv-proposta-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cdv-proposta-card h4 {
+	margin: 0 0 12px 0;
+	font-size: 18px;
+}
+
+.cdv-proposta-meta {
+	display: flex;
+	gap: 12px;
+	margin-bottom: 12px;
+	font-size: 14px;
+	color: #666;
+}
+
+.cdv-proposta-excerpt {
+	margin-bottom: 18px;
+	color: #555;
+}
+
+.cdv-proposta-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.cdv-vote-btn {
+	padding: 8px 16px;
+	background: #f0f0f0;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.cdv-vote-btn:hover {
+	background: #e0e0e0;
+}
+
+.cdv-vote-btn.voted {
+	background: #4a90e2;
+	color: #fff;
+}
+
+/* ===== HERO DOSSIER ===== */
+.cdv-dossier-hero {
+	position: relative;
+	min-height: 400px;
+	background-size: cover;
+	background-position: center;
+	border-radius: 18px;
+	overflow: hidden;
+	margin: 24px 0;
+}
+
+.cdv-dossier-hero-overlay {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px;
+}
+
+.cdv-dossier-hero-content {
+	text-align: center;
+	color: #fff;
+	max-width: 800px;
+}
+
+.cdv-dossier-hero h1 {
+	color: #fff;
+	font-size: 42px;
+	margin-bottom: 18px;
+}
+
+.cdv-dossier-meta {
+	display: flex;
+	gap: 18px;
+	justify-content: center;
+	margin-bottom: 18px;
+}
+
+.cdv-dossier-excerpt {
+	font-size: 18px;
+	margin-bottom: 24px;
+}
+
+/* ===== LISTA EVENTI ===== */
+.cdv-eventi-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+	gap: 24px;
+	margin: 24px 0;
+}
+
+.cdv-evento-card {
+	background: #fff;
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.3s;
+}
+
+.cdv-evento-card:hover {
+	transform: translateY(-4px);
+}
+
+.cdv-evento-thumbnail img {
+	width: 100%;
+	height: 200px;
+	object-fit: cover;
+}
+
+.cdv-evento-content {
+	padding: 20px;
+}
+
+.cdv-evento-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 12px 0;
+	font-size: 14px;
+	color: #666;
+}
+
+/* ===== PERSONA CARD ===== */
+.cdv-persona-card {
+	background: #fff;
+	padding: 24px;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	text-align: center;
+	max-width: 350px;
+	margin: 0 auto;
+}
+
+.cdv-persona-avatar img {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	object-fit: cover;
+	margin-bottom: 18px;
+}
+
+.cdv-persona-ruolo {
+	color: #666;
+	font-size: 14px;
+	margin: 8px 0;
+}
+
+.cdv-persona-contatti {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.cdv-contatto {
+	display: inline-block;
+	padding: 8px 12px;
+	background: #f5f5f5;
+	border-radius: 8px;
+	text-decoration: none;
+	color: #333;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.cdv-contatto:hover {
+	background: #e0e0e0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+	.cdv-proposte-list,
+	.cdv-eventi-list {
+		grid-template-columns: 1fr;
+	}
+	
+	.cdv-dossier-hero h1 {
+		font-size: 32px;
+	}
+	
+	.cdv-proposta-meta,
+	.cdv-evento-meta {
+		flex-direction: column;
+		gap: 8px;
+	}
+}
