@@ -259,6 +259,9 @@ class Bootstrap {
 	 * Carica gli assets frontend.
 	 */
 	public function enqueue_frontend_assets() {
+		// Determina se usare versione minificata (produzione)
+		$min = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+
 		// CSS principale (entry point modulare)
 		wp_enqueue_style(
 			'cdv-frontend',
@@ -267,16 +270,7 @@ class Bootstrap {
 			CDV_VERSION
 		);
 
-		// CSS legacy per retrocompatibilità (opzionale)
-		wp_enqueue_style(
-			'cdv-extended',
-			CDV_PLUGIN_URL . 'assets/css/cdv-extended.css',
-			[ 'cdv-frontend' ],
-			CDV_VERSION
-		);
-
-		// JavaScript - Moduli
-		// Carica moduli utilities
+		// JavaScript - Moduli Core (sempre caricati)
 		wp_enqueue_script(
 			'cdv-utils',
 			CDV_PLUGIN_URL . 'assets/js/modules/utils.js',
@@ -285,7 +279,6 @@ class Bootstrap {
 			true
 		);
 
-		// Carica modulo analytics tracker
 		wp_enqueue_script(
 			'cdv-analytics',
 			CDV_PLUGIN_URL . 'assets/js/modules/analytics-tracker.js',
@@ -294,29 +287,89 @@ class Bootstrap {
 			true
 		);
 
-		// Carica modulo form handler
-		wp_enqueue_script(
-			'cdv-form-handler',
-			CDV_PLUGIN_URL . 'assets/js/modules/form-handler.js',
-			[ 'jquery', 'cdv-analytics' ],
-			CDV_VERSION,
-			true
-		);
+		// Moduli condizionali - Carica solo se necessari
+		global $post;
+		$load_form_handler = false;
+		$load_voting = false;
+		$load_petition = false;
+		$load_poll = false;
 
-		// Carica modulo voting system
-		wp_enqueue_script(
-			'cdv-voting-system',
-			CDV_PLUGIN_URL . 'assets/js/modules/voting-system.js',
-			[ 'jquery', 'cdv-analytics' ],
-			CDV_VERSION,
-			true
-		);
+		// Verifica contenuto pagina per caricamento condizionale
+		if ( is_singular() && $post ) {
+			$content = $post->post_content;
+			
+			// Form proposte
+			if ( has_shortcode( $content, 'cdv_proposta_form' ) || is_post_type_archive( 'cdv_proposta' ) ) {
+				$load_form_handler = true;
+			}
+			
+			// Sistema votazione
+			if ( has_shortcode( $content, 'cdv_proposte_list' ) || is_singular( 'cdv_proposta' ) ) {
+				$load_voting = true;
+			}
+			
+			// Petizioni
+			if ( has_shortcode( $content, 'cdv_petizione_form' ) || 
+			     has_shortcode( $content, 'cdv_petizioni' ) || 
+			     is_singular( 'cdv_petizione' ) ) {
+				$load_petition = true;
+			}
+			
+			// Sondaggi
+			if ( has_shortcode( $content, 'cdv_sondaggio_form' ) || is_singular( 'cdv_sondaggio' ) ) {
+				$load_poll = true;
+			}
+		}
 
-		// JavaScript principale (entry point che inizializza i moduli)
+		// Carica modulo form handler se necessario
+		if ( $load_form_handler || is_post_type_archive( 'cdv_proposta' ) ) {
+			wp_enqueue_script(
+				'cdv-form-handler',
+				CDV_PLUGIN_URL . 'assets/js/modules/form-handler.js',
+				[ 'jquery', 'cdv-analytics' ],
+				CDV_VERSION,
+				true
+			);
+		}
+
+		// Carica modulo voting system se necessario
+		if ( $load_voting || is_post_type_archive( 'cdv_proposta' ) ) {
+			wp_enqueue_script(
+				'cdv-voting-system',
+				CDV_PLUGIN_URL . 'assets/js/modules/voting-system.js',
+				[ 'jquery', 'cdv-analytics' ],
+				CDV_VERSION,
+				true
+			);
+		}
+
+		// Carica modulo petizioni se necessario
+		if ( $load_petition ) {
+			wp_enqueue_script(
+				'cdv-petition-handler',
+				CDV_PLUGIN_URL . 'assets/js/modules/petition-handler.js',
+				[ 'jquery', 'cdv-analytics', 'cdv-utils' ],
+				CDV_VERSION,
+				true
+			);
+		}
+
+		// Carica modulo sondaggi se necessario
+		if ( $load_poll ) {
+			wp_enqueue_script(
+				'cdv-poll-handler',
+				CDV_PLUGIN_URL . 'assets/js/modules/poll-handler.js',
+				[ 'jquery', 'cdv-analytics', 'cdv-utils' ],
+				CDV_VERSION,
+				true
+			);
+		}
+
+		// JavaScript principale (entry point - sempre caricato)
 		wp_enqueue_script(
 			'cdv-frontend',
 			CDV_PLUGIN_URL . 'assets/js/main.js',
-			[ 'jquery', 'cdv-utils', 'cdv-form-handler', 'cdv-voting-system' ],
+			[ 'jquery', 'cdv-utils' ],
 			CDV_VERSION,
 			true
 		);
@@ -341,20 +394,75 @@ class Bootstrap {
 	/**
 	 * Carica gli assets admin.
 	 */
-	public function enqueue_admin_assets() {
+	public function enqueue_admin_assets( $hook ) {
+		// Carica solo nelle pagine del plugin
+		$cdv_pages = [
+			'toplevel_page_cdv-dashboard',
+			'cdv_page_cdv-settings',
+			'cdv_page_cdv-analytics',
+			'edit-cdv_proposta',
+			'edit-cdv_petizione',
+			'edit-cdv_sondaggio',
+		];
+
+		// CSS Admin modulare
 		wp_enqueue_style(
 			'cdv-admin',
-			CDV_PLUGIN_URL . 'assets/css/cdv-admin.css',
+			CDV_PLUGIN_URL . 'assets/css/admin-main.css',
 			[],
 			CDV_VERSION
 		);
 
+		// JavaScript Admin - Moduli
 		wp_enqueue_script(
-			'cdv-admin',
-			CDV_PLUGIN_URL . 'assets/js/cdv-admin.js',
+			'cdv-admin-dashboard',
+			CDV_PLUGIN_URL . 'assets/js/admin/dashboard.js',
 			[ 'jquery' ],
 			CDV_VERSION,
 			true
+		);
+
+		wp_enqueue_script(
+			'cdv-admin-moderation',
+			CDV_PLUGIN_URL . 'assets/js/admin/moderation.js',
+			[ 'jquery' ],
+			CDV_VERSION,
+			true
+		);
+
+		wp_enqueue_script(
+			'cdv-admin-settings',
+			CDV_PLUGIN_URL . 'assets/js/admin/settings.js',
+			[ 'jquery', 'wp-color-picker' ],
+			CDV_VERSION,
+			true
+		);
+
+		// Color picker
+		wp_enqueue_style( 'wp-color-picker' );
+
+		// JavaScript Admin principale
+		wp_enqueue_script(
+			'cdv-admin',
+			CDV_PLUGIN_URL . 'assets/js/admin-main.js',
+			[ 'jquery', 'cdv-admin-dashboard', 'cdv-admin-moderation', 'cdv-admin-settings' ],
+			CDV_VERSION,
+			true
+		);
+
+		// Localizza dati per JavaScript admin
+		wp_localize_script(
+			'cdv-admin',
+			'cdvAdminData',
+			[
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'cdv_admin_nonce' ),
+				'strings' => [
+					'confirmDelete' => __( 'Sei sicuro di voler eliminare?', 'cronaca-di-viterbo' ),
+					'saved'         => __( 'Salvato!', 'cronaca-di-viterbo' ),
+					'error'         => __( 'Errore', 'cronaca-di-viterbo' ),
+				],
+			]
 		);
 	}
 }

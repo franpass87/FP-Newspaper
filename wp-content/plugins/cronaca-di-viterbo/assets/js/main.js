@@ -32,19 +32,32 @@
 				return;
 			}
 
-			// Inizializza Form Handler
+			// Inizializza Form Handler (se caricato)
 			if (window.CdV.FormHandler) {
 				window.CdV.FormHandler.init();
 			}
 
-			// Inizializza Voting System
+			// Inizializza Voting System (se caricato)
 			if (window.CdV.VotingSystem) {
 				window.CdV.VotingSystem.init();
 			}
 
+			// Inizializza Petition Handler (se caricato)
+			if (window.CdV.PetitionHandler) {
+				window.CdV.PetitionHandler.init();
+			}
+
+			// Inizializza Poll Handler (se caricato)
+			if (window.CdV.PollHandler) {
+				window.CdV.PollHandler.init();
+			}
+
 			// Log inizializzazione completata
 			if (window.console && window.console.log) {
-				console.log('CdV: Moduli inizializzati correttamente');
+				const loadedModules = Object.keys(window.CdV).filter(key => 
+					typeof window.CdV[key] === 'object' && window.CdV[key].init
+				);
+				console.log('CdV: Moduli inizializzati:', loadedModules.join(', '));
 			}
 		}
 	};
