@@ -3,7 +3,7 @@
  * Plugin Name: Cronaca di Viterbo
  * Plugin URI: https://francescopasseri.com
  * Description: Plugin modulare per il giornale "Cronaca di Viterbo": gestione dossier, proposte cittadini, eventi, ambasciatori civici, con integrazione WPBakery, AJAX, GA4, SEO e ruoli personalizzati.
- * Version: 1.0.0
+ * Version: 1.5.0
  * Author: Francesco Passeri
  * Author URI: https://francescopasseri.com
  * License: GPLv2 or later
