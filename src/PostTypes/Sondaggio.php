@@ -205,7 +205,7 @@ class Sondaggio {
 							<tr>
 								<td><?php echo esc_html( $options[ $result->option_index ] ); ?></td>
 								<td><?php echo esc_html( number_format_i18n( $result->votes ) ); ?></td>
-								<td><?php echo esc_html( round( ( $result->votes / $total ) * 100, 1 ) ); ?>%</td>
+								<td><?php echo esc_html( $total > 0 ? round( ( $result->votes / $total ) * 100, 1 ) : 0 ); ?>%</td>
 							</tr>
 						<?php endif; ?>
 					<?php endforeach; ?>

@@ -63,6 +63,23 @@ class Security {
 	}
 
 	/**
+	 * Verifica se il rate limit è OK (non superato).
+	 *
+	 * @param string $action Action name.
+	 * @param int    $seconds Secondi di cooldown.
+	 * @return bool True se il rate limit è OK (può procedere), False se è stato superato.
+	 */
+	public static function check_rate_limit( $action, $seconds = 60 ) {
+		if ( self::is_rate_limited( $action, $seconds ) ) {
+			return false; // Rate limit superato
+		}
+		
+		// Imposta il rate limit
+		self::set_rate_limit( $action, $seconds );
+		return true; // OK, può procedere
+	}
+
+	/**
 	 * Imposta un rate limit.
 	 *
 	 * @param string $action Action name.

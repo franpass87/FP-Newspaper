@@ -26,74 +26,87 @@
 			$(document).on('click', '.cdv-view-results', this.showResults.bind(this));
 		},
 
-		/**
-		 * Gestisce invio voto
-		 * @param {Event} e - Evento submit
-		 */
-		handleSubmit(e) {
-			e.preventDefault();
+	/**
+	 * Gestisce invio voto
+	 * @param {Event} e - Evento submit
+	 */
+	handleSubmit(e) {
+		e.preventDefault();
 
-			const $form = $(e.target);
-			const $submitBtn = $form.find('button[type="submit"]');
-			const sondaggioId = $form.find('[name="sondaggio_id"]').val();
-			const opzione = $form.find('input[name="opzione"]:checked').val();
-
-			if (!opzione) {
-				alert('Seleziona un\'opzione');
-				return;
+		const $form = $(e.target);
+		const $submitBtn = $form.find('button[type="submit"]');
+		const sondaggioId = $form.data('sondaggio-id') || $form.closest('.cdv-sondaggio-wrapper').data('sondaggio-id');
+		const isMultiplo = $form.data('multiplo') === '1';
+		
+		// Raccoglie le opzioni selezionate
+		let options = [];
+		if (isMultiplo) {
+			$form.find('input[name="options[]"]:checked').each(function() {
+				options.push(parseInt($(this).val()));
+			});
+		} else {
+			const selectedOption = $form.find('input[name="options"]:checked').val();
+			if (selectedOption !== undefined) {
+				options.push(parseInt(selectedOption));
 			}
+		}
 
-			// Disabilita pulsante
-			$submitBtn.prop('disabled', true).text('Invio voto...');
+		if (options.length === 0) {
+			alert('Seleziona almeno un\'opzione');
+			return;
+		}
 
-			// Invio AJAX
-			this.sendVote(sondaggioId, opzione, $form, $submitBtn);
-		},
+		// Disabilita pulsante
+		$submitBtn.prop('disabled', true).text('Invio voto...');
 
-		/**
-		 * Voto rapido (click su opzione)
-		 * @param {Event} e - Evento click
-		 */
-		handleQuickVote(e) {
-			e.preventDefault();
+		// Invio AJAX
+		this.sendVote(sondaggioId, options, $form, $submitBtn);
+	},
 
-			const $option = $(e.currentTarget);
-			const sondaggioId = $option.data('poll-id');
-			const opzione = $option.data('option');
+	/**
+	 * Voto rapido (click su opzione)
+	 * @param {Event} e - Evento click
+	 */
+	handleQuickVote(e) {
+		e.preventDefault();
 
-			if ($option.hasClass('voted')) {
-				return; // Già votato
-			}
+		const $option = $(e.currentTarget);
+		const sondaggioId = $option.data('poll-id');
+		const opzioneIndex = parseInt($option.data('option'));
 
-			$option.addClass('voting');
-			this.sendVote(sondaggioId, opzione, null, null, $option);
-		},
+		if ($option.hasClass('voted')) {
+			return; // Già votato
+		}
 
-		/**
-		 * Invia voto
-		 * @param {number} sondaggioId - ID sondaggio
-		 * @param {string} opzione - Opzione scelta
-		 * @param {jQuery} $form - Form (opzionale)
-		 * @param {jQuery} $submitBtn - Pulsante submit (opzionale)
-		 * @param {jQuery} $option - Opzione clickata (opzionale)
-		 */
-		sendVote(sondaggioId, opzione, $form, $submitBtn, $option) {
-			$.ajax({
-				url: cdvData.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'cdv_vota_sondaggio',
-					nonce: cdvData.nonce,
-					sondaggio_id: sondaggioId,
-					opzione: opzione
-				},
-				success: (response) => {
-					if (response.success) {
-						this.handleSuccess(response, sondaggioId, opzione);
-					} else {
-						this.handleError(response.data.message);
-					}
-				},
+		$option.addClass('voting');
+		this.sendVote(sondaggioId, [opzioneIndex], null, null, $option);
+	},
+
+	/**
+	 * Invia voto
+	 * @param {number} sondaggioId - ID sondaggio
+	 * @param {Array} options - Array di opzioni scelte
+	 * @param {jQuery} $form - Form (opzionale)
+	 * @param {jQuery} $submitBtn - Pulsante submit (opzionale)
+	 * @param {jQuery} $option - Opzione clickata (opzionale)
+	 */
+	sendVote(sondaggioId, options, $form, $submitBtn, $option) {
+		$.ajax({
+			url: cdvData.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'cdv_vota_sondaggio',
+				nonce: cdvData.nonce,
+				sondaggio_id: sondaggioId,
+				options: options
+			},
+			success: (response) => {
+				if (response.success) {
+					this.handleSuccess(response, sondaggioId, options);
+				} else {
+					this.handleError(response.data.message);
+				}
+			},
 				error: () => {
 					this.handleError('Errore di connessione');
 				},
@@ -108,32 +121,42 @@
 			});
 		},
 
-		/**
-		 * Gestisce successo
-		 * @param {Object} response - Risposta AJAX
-		 * @param {number} sondaggioId - ID sondaggio
-		 * @param {string} opzione - Opzione votata
-		 */
-		handleSuccess(response, sondaggioId, opzione) {
-			// Nascondi form
-			$(`.cdv-poll-${sondaggioId} .cdv-poll-form`).hide();
+	/**
+	 * Gestisce successo
+	 * @param {Object} response - Risposta AJAX
+	 * @param {number} sondaggioId - ID sondaggio
+	 * @param {Array} options - Opzioni votate
+	 */
+	handleSuccess(response, sondaggioId, options) {
+		// Nascondi form
+		$(`.cdv-sondaggio-wrapper[data-sondaggio-id="${sondaggioId}"] .cdv-sondaggio-form`).hide();
 
-			// Mostra risultati
-			this.displayResults(sondaggioId, response.data.risultati);
+		// Mostra risultati se disponibili
+		if (response.data.results && response.data.results.length > 0) {
+			this.displayResults(sondaggioId, response.data.results);
+		}
 
-			// Marca come votato
-			$(`.cdv-poll-${sondaggioId}`).addClass('voted');
+		// Marca come votato
+		$(`.cdv-sondaggio-wrapper[data-sondaggio-id="${sondaggioId}"]`).addClass('voted');
 
-			// Analytics
-			if (window.AnalyticsTracker) {
-				window.AnalyticsTracker.trackSondaggioVoted(sondaggioId, opzione);
-			}
+		// Analytics
+		if (window.AnalyticsTracker) {
+			window.AnalyticsTracker.trackSondaggioVoted(sondaggioId, options);
+		}
 
-			// Messaggio
-			if (window.CdV && window.CdV.Utils) {
-				window.CdV.Utils.showNotification('Voto registrato!', 'success');
-			}
-		},
+		// Mostra messaggio di successo
+		const $wrapper = $(`.cdv-sondaggio-wrapper[data-sondaggio-id="${sondaggioId}"]`);
+		const $message = $('<div>')
+			.addClass('cdv-response success')
+			.text(response.data.message)
+			.insertAfter($wrapper.find('.cdv-sondaggio-form'));
+		
+		setTimeout(() => {
+			$message.fadeOut(400, function() {
+				$(this).remove();
+			});
+		}, 5000);
+	},
 
 		/**
 		 * Gestisce errore
@@ -154,83 +177,76 @@
 			$(`.cdv-poll-${sondaggioId} .cdv-poll-results`).slideDown();
 		},
 
-		/**
-		 * Visualizza risultati
-		 * @param {number} sondaggioId - ID sondaggio
-		 * @param {Object} risultati - Risultati sondaggio
-		 */
-		displayResults(sondaggioId, risultati) {
-			const $results = $(`.cdv-poll-${sondaggioId} .cdv-poll-results`);
+	/**
+	 * Visualizza risultati
+	 * @param {number} sondaggioId - ID sondaggio
+	 * @param {Array} risultati - Risultati sondaggio (array di oggetti)
+	 */
+	displayResults(sondaggioId, risultati) {
+		const $wrapper = $(`.cdv-sondaggio-wrapper[data-sondaggio-id="${sondaggioId}"]`);
+		let $results = $wrapper.find('.cdv-sondaggio-results');
+		
+		if (!$results.length) {
+			// Crea contenitore risultati
+			$results = $('<div>')
+				.addClass('cdv-sondaggio-results')
+				.insertAfter($wrapper.find('.cdv-sondaggio-form'));
 			
-			if (!$results.length) {
-				// Crea contenitore risultati
-				const $resultsContainer = $('<div>')
-					.addClass('cdv-poll-results')
-					.insertAfter($(`.cdv-poll-${sondaggioId} .cdv-poll-form`));
-				
-				this.renderResults($resultsContainer, risultati);
-			} else {
-				this.updateResults($results, risultati);
+			this.renderResults($results, risultati);
+		} else {
+			this.updateResults($results, risultati);
+		}
+
+		$results.slideDown();
+	},
+
+	/**
+	 * Renderizza risultati
+	 * @param {jQuery} $container - Contenitore
+	 * @param {Array} risultati - Array di risultati {option, votes, percentage}
+	 */
+	renderResults($container, risultati) {
+		$container.empty();
+		
+		if (!risultati || risultati.length === 0) {
+			return;
+		}
+
+		const $title = $('<h4>').text('Risultati').appendTo($container);
+
+		risultati.forEach(result => {
+			const $resultRow = $('<div>')
+				.addClass('cdv-result-row')
+				.html(`
+					<span class="cdv-result-option">${result.option}</span>
+					<div class="cdv-result-bar">
+						<div class="cdv-result-fill" style="width: ${result.percentage}%"></div>
+					</div>
+					<span class="cdv-result-percentage">${result.percentage}% (${result.votes} voti)</span>
+				`);
+
+			$container.append($resultRow);
+		});
+	},
+
+	/**
+	 * Aggiorna risultati esistenti
+	 * @param {jQuery} $results - Contenitore risultati
+	 * @param {Array} risultati - Nuovi risultati
+	 */
+	updateResults($results, risultati) {
+		if (!risultati || risultati.length === 0) {
+			return;
+		}
+
+		risultati.forEach(result => {
+			const $resultRow = $results.find(`.cdv-result-row:contains("${result.option}")`).first();
+			if ($resultRow.length) {
+				$resultRow.find('.cdv-result-percentage').text(`${result.percentage}% (${result.votes} voti)`);
+				$resultRow.find('.cdv-result-fill').animate({ width: result.percentage + '%' }, 500);
 			}
-
-			$results.slideDown();
-		},
-
-		/**
-		 * Renderizza risultati
-		 * @param {jQuery} $container - Contenitore
-		 * @param {Object} risultati - Risultati
-		 */
-		renderResults($container, risultati) {
-			const totaleVoti = Object.values(risultati).reduce((a, b) => a + b, 0);
-
-			$container.empty();
-
-			Object.keys(risultati).forEach(opzione => {
-				const voti = risultati[opzione];
-				const percentuale = totaleVoti > 0 ? Math.round((voti / totaleVoti) * 100) : 0;
-
-				const $option = $('<div>')
-					.addClass('cdv-poll-result-item')
-					.html(`
-						<div class="cdv-poll-result-label">
-							<span>${opzione}</span>
-							<span>${percentuale}% (${voti} voti)</span>
-						</div>
-						<div class="cdv-poll-result-bar">
-							<div class="cdv-poll-result-fill" style="width: ${percentuale}%"></div>
-						</div>
-					`);
-
-				$container.append($option);
-			});
-
-			// Totale voti
-			$('<div>')
-				.addClass('cdv-poll-total')
-				.text(`Totale voti: ${totaleVoti}`)
-				.appendTo($container);
-		},
-
-		/**
-		 * Aggiorna risultati esistenti
-		 * @param {jQuery} $results - Contenitore risultati
-		 * @param {Object} risultati - Nuovi risultati
-		 */
-		updateResults($results, risultati) {
-			const totaleVoti = Object.values(risultati).reduce((a, b) => a + b, 0);
-
-			Object.keys(risultati).forEach(opzione => {
-				const voti = risultati[opzione];
-				const percentuale = totaleVoti > 0 ? Math.round((voti / totaleVoti) * 100) : 0;
-
-				const $item = $results.find(`.cdv-poll-result-item:contains("${opzione}")`);
-				$item.find('.cdv-poll-result-label span:last-child').text(`${percentuale}% (${voti} voti)`);
-				$item.find('.cdv-poll-result-fill').animate({ width: percentuale + '%' }, 500);
-			});
-
-			$results.find('.cdv-poll-total').text(`Totale voti: ${totaleVoti}`);
-		},
+		});
+	},
 
 		/**
 		 * Inizializza grafici

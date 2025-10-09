@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definizione costanti plugin
-define( 'CDV_VERSION', '1.0.0' );
+define( 'CDV_VERSION', '1.5.0' );
 define( 'CDV_PLUGIN_FILE', __FILE__ );
 define( 'CDV_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CDV_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

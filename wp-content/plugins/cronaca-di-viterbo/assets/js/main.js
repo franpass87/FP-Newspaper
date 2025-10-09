@@ -52,13 +52,13 @@
 				window.CdV.PollHandler.init();
 			}
 
-			// Log inizializzazione completata
-			if (window.console && window.console.log) {
-				const loadedModules = Object.keys(window.CdV).filter(key => 
-					typeof window.CdV[key] === 'object' && window.CdV[key].init
-				);
-				console.log('CdV: Moduli inizializzati:', loadedModules.join(', '));
-			}
+		// Log inizializzazione completata (development only)
+		if (window.console && window.cdvDebug) {
+			const loadedModules = Object.keys(window.CdV).filter(key => 
+				typeof window.CdV[key] === 'object' && window.CdV[key].init
+			);
+			console.log('CdV: Moduli inizializzati:', loadedModules.join(', '));
+		}
 		}
 	};
 

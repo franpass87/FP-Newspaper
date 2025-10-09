@@ -21,10 +21,12 @@
 		/**
 		 * Inizializza i grafici
 		 */
-		initCharts() {
-			// Placeholder per integrazione chart.js o similar
+	initCharts() {
+		// Placeholder per integrazione chart.js o similar
+		if (window.console && window.cdvDebug) {
 			console.log('Dashboard charts initialized');
-		},
+		}
+	},
 
 		/**
 		 * Inizializza refresh statistiche
@@ -106,9 +108,11 @@
 				case 'clear-cache':
 					this.clearCache();
 					break;
-				default:
+			default:
+				if (window.console && window.cdvDebug) {
 					console.log('Unknown action:', action);
-			}
+				}
+		}
 		},
 
 		/**

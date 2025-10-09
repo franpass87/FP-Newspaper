@@ -101,7 +101,7 @@ class Petizione {
 		<p>
 			<strong><?php esc_html_e( 'Progressione', 'cronaca-di-viterbo' ); ?>:</strong><br>
 			<progress value="<?php echo esc_attr( $firme ); ?>" max="<?php echo esc_attr( $soglia ); ?>" style="width: 100%;"></progress><br>
-			<small><?php echo esc_html( round( ( $firme / $soglia ) * 100, 1 ) ); ?>%</small>
+			<small><?php echo esc_html( $soglia > 0 ? round( ( $firme / $soglia ) * 100, 1 ) : 0 ); ?>%</small>
 		</p>
 
 		<p>

@@ -39,15 +39,18 @@
 			// Disabilita pulsante
 			$submitBtn.prop('disabled', true).text('Firma in corso...');
 
-			// Raccolta dati
-			const formData = {
-				action: 'cdv_firma_petizione',
-				nonce: cdvData.nonce,
-				petizione_id: petizioneId,
-				nome: $form.find('[name="nome"]').val(),
-				email: $form.find('[name="email"]').val(),
-				privacy: $form.find('[name="privacy"]').is(':checked') ? 'on' : 'off'
-			};
+		// Raccolta dati
+		const formData = {
+			action: 'cdv_firma_petizione',
+			nonce: cdvData.nonce,
+			petizione_id: petizioneId,
+			nome: $form.find('[name="nome"]').val(),
+			cognome: $form.find('[name="cognome"]').val(),
+			email: $form.find('[name="email"]').val(),
+			comune: $form.find('[name="comune"]').val(),
+			motivazione: $form.find('[name="motivazione"]').val(),
+			privacy: $form.find('[name="privacy"]').is(':checked') ? 'on' : 'off'
+		};
 
 			// Invio AJAX
 			this.sendSignature(formData, $form, $submitBtn);
@@ -80,7 +83,7 @@
 				success: (response) => {
 					if (response.success) {
 						$btn.addClass('signed').text('✓ Firmato');
-						this.updateSignatureCount(petizioneId, response.data.firme);
+						this.updateSignatureCount(petizioneId, response.data.firme_count);
 						
 						// Analytics
 						if (window.AnalyticsTracker) {
@@ -142,7 +145,7 @@
 			$form[0].reset();
 
 			// Aggiorna contatore
-			this.updateSignatureCount(petizioneId, response.data.firme);
+			this.updateSignatureCount(petizioneId, response.data.firme_count);
 
 			// Analytics
 			if (window.AnalyticsTracker) {
