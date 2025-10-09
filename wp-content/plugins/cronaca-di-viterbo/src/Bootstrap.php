@@ -65,6 +65,9 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Admin/Screens.php';
 		require_once CDV_PLUGIN_DIR . 'src/Admin/Settings.php';
 		require_once CDV_PLUGIN_DIR . 'src/Admin/Dashboard.php';
+		require_once CDV_PLUGIN_DIR . 'src/Admin/Analytics.php';
+		require_once CDV_PLUGIN_DIR . 'src/Admin/ImportExport.php';
+		require_once CDV_PLUGIN_DIR . 'src/Admin/BulkActions.php';
 
 		// Shortcodes
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/PropostaForm.php';
@@ -105,6 +108,17 @@ class Bootstrap {
 
 		// Utils
 		require_once CDV_PLUGIN_DIR . 'src/Utils/View.php';
+
+		// Widgets
+		require_once CDV_PLUGIN_DIR . 'src/Widgets/ProposteWidget.php';
+		require_once CDV_PLUGIN_DIR . 'src/Widgets/EventiWidget.php';
+		require_once CDV_PLUGIN_DIR . 'src/Widgets/StatsWidget.php';
+
+		// Gutenberg
+		require_once CDV_PLUGIN_DIR . 'src/Gutenberg/Blocks.php';
+
+		// API
+		require_once CDV_PLUGIN_DIR . 'src/API/RestAPI.php';
 	}
 
 	/**
@@ -128,6 +142,9 @@ class Bootstrap {
 		new Admin\Screens();
 		new Admin\Settings();
 		Admin\Dashboard::init();
+		Admin\Analytics::init();
+		Admin\ImportExport::init();
+		Admin\BulkActions::init();
 
 		// Shortcodes
 		new Shortcodes\PropostaForm();
@@ -161,6 +178,19 @@ class Bootstrap {
 		Services\Notifiche::init();
 		Services\Reputazione::init();
 		Services\VotazioneAvanzata::init();
+
+		// Widgets
+		add_action( 'widgets_init', function() {
+			register_widget( Widgets\ProposteWidget::class );
+			register_widget( Widgets\EventiWidget::class );
+			register_widget( Widgets\StatsWidget::class );
+		});
+
+		// Gutenberg
+		Gutenberg\Blocks::init();
+
+		// API REST
+		API\RestAPI::init();
 	}
 
 	/**
@@ -233,6 +263,13 @@ class Bootstrap {
 			'cdv-frontend',
 			CDV_PLUGIN_URL . 'assets/css/cdv.css',
 			[],
+			CDV_VERSION
+		);
+
+		wp_enqueue_style(
+			'cdv-extended',
+			CDV_PLUGIN_URL . 'assets/css/cdv-extended.css',
+			[ 'cdv-frontend' ],
 			CDV_VERSION
 		);
 
