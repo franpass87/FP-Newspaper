@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<ruleset name="Cronaca di Viterbo">
+    <description>Coding standards for Cronaca di Viterbo plugin</description>
+
+    <!-- Check all PHP files in src directory -->
+    <file>./src</file>
+    <file>./cronaca-di-viterbo.php</file>
+
+    <!-- Exclude vendor and node_modules -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+
+    <!-- Use WordPress Coding Standards -->
+    <rule ref="WordPress-Core">
+        <!-- Allow short array syntax -->
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+    </rule>
+
+    <rule ref="WordPress-Docs"/>
+
+    <rule ref="WordPress-Extra">
+        <!-- Allow short ternary -->
+        <exclude name="WordPress.PHP.DisallowShortTernary"/>
+    </rule>
+
+    <!-- Check for PHP cross-version compatibility -->
+    <config name="testVersion" value="8.0-"/>
+    <rule ref="PHPCompatibility"/>
+
+    <!-- Text Domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="cronaca-di-viterbo"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Prefix for hooks and functions -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="cdv"/>
+                <element value="CdV"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Allow PSR-4 file naming -->
+    <rule ref="WordPress.Files.FileName">
+        <properties>
+            <property name="strict_class_file_names" value="false"/>
+        </properties>
+    </rule>
+</ruleset>
