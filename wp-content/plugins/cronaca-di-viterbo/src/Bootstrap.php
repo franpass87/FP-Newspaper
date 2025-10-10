@@ -56,6 +56,8 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/PostTypes/RispostaAmministrazione.php';
 		require_once CDV_PLUGIN_DIR . 'src/PostTypes/Petizione.php';
 		require_once CDV_PLUGIN_DIR . 'src/PostTypes/Sondaggio.php';
+		require_once CDV_PLUGIN_DIR . 'src/PostTypes/VideoStory.php';
+		require_once CDV_PLUGIN_DIR . 'src/PostTypes/GalleriaFoto.php';
 
 		// Taxonomies
 		require_once CDV_PLUGIN_DIR . 'src/Taxonomies/Quartiere.php';
@@ -80,6 +82,8 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/SondaggioForm.php';
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/UserProfile.php';
 		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/MappaInterattiva.php';
+		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/VideoStories.php';
+		require_once CDV_PLUGIN_DIR . 'src/Shortcodes/GalleriaFoto.php';
 
 		// WPBakery
 		if ( defined( 'WPB_VC_VERSION' ) ) {
@@ -91,6 +95,7 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Ajax/VoteProposta.php';
 		require_once CDV_PLUGIN_DIR . 'src/Ajax/FirmaPetizione.php';
 		require_once CDV_PLUGIN_DIR . 'src/Ajax/VotaSondaggio.php';
+		require_once CDV_PLUGIN_DIR . 'src/Ajax/VideoActions.php';
 
 		// Services
 		require_once CDV_PLUGIN_DIR . 'src/Services/Schema.php';
@@ -102,6 +107,7 @@ class Bootstrap {
 		require_once CDV_PLUGIN_DIR . 'src/Services/Notifiche.php';
 		require_once CDV_PLUGIN_DIR . 'src/Services/Reputazione.php';
 		require_once CDV_PLUGIN_DIR . 'src/Services/VotazioneAvanzata.php';
+		require_once CDV_PLUGIN_DIR . 'src/Services/AIChatbot.php';
 
 		// Roles
 		require_once CDV_PLUGIN_DIR . 'src/Roles/Capabilities.php';
@@ -133,6 +139,8 @@ class Bootstrap {
 		PostTypes\RispostaAmministrazione::register();
 		PostTypes\Petizione::register();
 		PostTypes\Sondaggio::register();
+		new PostTypes\VideoStory();
+		new PostTypes\GalleriaFoto();
 
 		// Taxonomies
 		new Taxonomies\Quartiere();
@@ -157,6 +165,9 @@ class Bootstrap {
 		add_shortcode( 'cdv_sondaggio_form', [ Shortcodes\SondaggioForm::class, 'render' ] );
 		add_shortcode( 'cdv_user_profile', [ Shortcodes\UserProfile::class, 'render' ] );
 		add_shortcode( 'cdv_mappa', [ Shortcodes\MappaInterattiva::class, 'render' ] );
+		add_shortcode( 'cdv_video_stories', [ Shortcodes\VideoStories::class, 'render' ] );
+		add_shortcode( 'cdv_galleria', [ Shortcodes\GalleriaFoto::class, 'render' ] );
+		add_shortcode( 'cdv_gallerie', [ Shortcodes\GalleriaFoto::class, 'render_list' ] );
 
 		// WPBakery
 		if ( defined( 'WPB_VC_VERSION' ) ) {
@@ -170,6 +181,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_nopriv_cdv_firma_petizione', [ Ajax\FirmaPetizione::class, 'handle' ] );
 		add_action( 'wp_ajax_cdv_vota_sondaggio', [ Ajax\VotaSondaggio::class, 'handle' ] );
 		add_action( 'wp_ajax_nopriv_cdv_vota_sondaggio', [ Ajax\VotaSondaggio::class, 'handle' ] );
+		Ajax\VideoActions::init();
 
 		// Services
 		new Services\Schema();
@@ -178,6 +190,7 @@ class Bootstrap {
 		Services\Notifiche::init();
 		Services\Reputazione::init();
 		Services\VotazioneAvanzata::init();
+		Services\AIChatbot::init();
 
 		// Widgets
 		add_action( 'widgets_init', function() {
@@ -215,6 +228,10 @@ class Bootstrap {
 		add_action( 'save_post', [ PostTypes\Petizione::class, 'save_meta_box' ] );
 		add_action( 'add_meta_boxes', [ PostTypes\Sondaggio::class, 'add_meta_boxes' ] );
 		add_action( 'save_post', [ PostTypes\Sondaggio::class, 'save_meta_box' ] );
+		add_action( 'add_meta_boxes', [ PostTypes\VideoStory::class, 'add_meta_boxes' ] );
+		add_action( 'save_post', [ PostTypes\VideoStory::class, 'save_meta_box' ] );
+		add_action( 'add_meta_boxes', [ PostTypes\GalleriaFoto::class, 'add_meta_boxes' ] );
+		add_action( 'save_post', [ PostTypes\GalleriaFoto::class, 'save_meta_box' ] );
 	}
 
 	/**
@@ -266,6 +283,22 @@ class Bootstrap {
 		wp_enqueue_style(
 			'cdv-frontend',
 			CDV_PLUGIN_URL . 'assets/css/main.css',
+			[],
+			CDV_VERSION
+		);
+
+		// CSS Media (Video & Foto)
+		wp_enqueue_style(
+			'cdv-media',
+			CDV_PLUGIN_URL . 'assets/css/cdv-media.css',
+			[],
+			CDV_VERSION
+		);
+
+		// CSS Chatbot
+		wp_enqueue_style(
+			'cdv-chatbot',
+			CDV_PLUGIN_URL . 'assets/css/cdv-chatbot.css',
 			[],
 			CDV_VERSION
 		);
@@ -370,6 +403,24 @@ class Bootstrap {
 			'cdv-frontend',
 			CDV_PLUGIN_URL . 'assets/js/main.js',
 			[ 'jquery', 'cdv-utils' ],
+			CDV_VERSION,
+			true
+		);
+
+		// JavaScript Media (Video & Foto)
+		wp_enqueue_script(
+			'cdv-media',
+			CDV_PLUGIN_URL . 'assets/js/cdv-media.js',
+			[ 'jquery' ],
+			CDV_VERSION,
+			true
+		);
+
+		// JavaScript Chatbot
+		wp_enqueue_script(
+			'cdv-chatbot',
+			CDV_PLUGIN_URL . 'assets/js/cdv-chatbot.js',
+			[ 'jquery' ],
 			CDV_VERSION,
 			true
 		);
