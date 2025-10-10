@@ -16,10 +16,17 @@
 			this.bindEvents();
 			this.initVideoPlayers();
 			this.initStoriesViewer();
+			this.initEmbedDetection();
 		},
 
 		bindEvents() {
-			// Play/Pause su overlay click
+			// Auto-detect platform on URL input (admin)
+			$(document).on('input', '#cdv_video_url', function() {
+				const url = $(this).val();
+				CdvVideo.detectPlatform(url);
+			});
+
+			// Play/Pause su overlay click (solo per video diretti)
 			$(document).on('click', '.cdv-play-btn', function(e) {
 				e.preventDefault();
 				const $card = $(this).closest('.cdv-video-card');
@@ -86,8 +93,48 @@
 			});
 		},
 
+		detectPlatform(url) {
+			if (!url) return;
+
+			let platform = 'Sconosciuta';
+			const urlLower = url.toLowerCase();
+
+			if (urlLower.includes('instagram.com') || urlLower.includes('instagr.am')) {
+				platform = 'Instagram';
+			} else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
+				platform = 'YouTube';
+			} else if (urlLower.includes('tiktok.com')) {
+				platform = 'TikTok';
+			} else if (urlLower.includes('vimeo.com')) {
+				platform = 'Vimeo';
+			} else if (urlLower.includes('facebook.com') || urlLower.includes('fb.watch')) {
+				platform = 'Facebook';
+			} else if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) {
+				platform = 'Twitter/X';
+			}
+
+			$('#cdv-detected-platform').text(platform);
+			$('#cdv_video_platform').val(platform.toLowerCase());
+			$('#cdv_video_type').val(platform !== 'Sconosciuta' ? 'embed' : 'upload');
+
+			// Show/hide detection box
+			if (platform !== 'Sconosciuta') {
+				$('.cdv-auto-detect').slideDown();
+			} else {
+				$('.cdv-auto-detect').slideUp();
+			}
+		},
+
+		initEmbedDetection() {
+			// Trigger detection on page load if URL exists
+			const initialUrl = $('#cdv_video_url').val();
+			if (initialUrl) {
+				this.detectPlatform(initialUrl);
+			}
+		},
+
 		initVideoPlayers() {
-			// Auto-pause quando esce dal viewport
+			// Auto-pause quando esce dal viewport (solo per video diretti, non embed)
 			if ('IntersectionObserver' in window) {
 				const observer = new IntersectionObserver((entries) => {
 					entries.forEach(entry => {

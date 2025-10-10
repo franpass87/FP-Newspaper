@@ -161,6 +161,7 @@ class VideoStories {
 	 */
 	private static function render_video_card( $post_id, $autoplay_attr = '' ): void {
 		$video_url = get_post_meta( $post_id, '_cdv_video_url', true );
+		$platform = get_post_meta( $post_id, '_cdv_video_platform', true );
 		$format = get_post_meta( $post_id, '_cdv_video_format', true );
 		$duration = get_post_meta( $post_id, '_cdv_video_duration', true );
 		$views = get_post_meta( $post_id, '_cdv_video_views', true ) ?: 0;
@@ -170,25 +171,12 @@ class VideoStories {
 		$tematiche = wp_get_post_terms( $post_id, 'cdv_tematica', array( 'fields' => 'names' ) );
 
 		?>
-		<article class="cdv-video-card cdv-format-<?php echo esc_attr( $format ); ?>" data-video-id="<?php echo esc_attr( $post_id ); ?>">
-			<div class="cdv-video-player-wrapper">
-				<?php if ( $video_url ) : ?>
-					<video 
-						class="cdv-video-player" 
-						<?php echo $autoplay_attr; ?>
-						controls
-						preload="metadata"
-						poster="<?php echo esc_url( get_the_post_thumbnail_url( $post_id, 'large' ) ); ?>"
-					>
-						<source src="<?php echo esc_url( $video_url ); ?>" type="video/mp4">
-						<?php esc_html_e( 'Il tuo browser non supporta il tag video.', 'cronaca-di-viterbo' ); ?>
-					</video>
-				<?php else : ?>
-					<div class="cdv-video-placeholder">
-						<span class="dashicons dashicons-video-alt3"></span>
-						<p><?php esc_html_e( 'Video non disponibile', 'cronaca-di-viterbo' ); ?></p>
-					</div>
-				<?php endif; ?>
+		<article class="cdv-video-card cdv-format-<?php echo esc_attr( $format ); ?> cdv-platform-<?php echo esc_attr( $platform ); ?>" data-video-id="<?php echo esc_attr( $post_id ); ?>">
+			<div class="cdv-video-embed-wrapper">
+				<?php 
+				// Usa embed HTML
+				echo \CdV\PostTypes\VideoStory::get_embed_html( $post_id );
+				?>
 
 				<?php if ( $duration ) : ?>
 					<div class="cdv-video-duration">
@@ -196,11 +184,21 @@ class VideoStories {
 					</div>
 				<?php endif; ?>
 
-				<div class="cdv-video-overlay">
-					<button type="button" class="cdv-play-btn" aria-label="<?php esc_attr_e( 'Play video', 'cronaca-di-viterbo' ); ?>">
-						<span class="dashicons dashicons-controls-play"></span>
-					</button>
-				</div>
+				<?php if ( $platform ) : ?>
+					<div class="cdv-video-badge cdv-badge-<?php echo esc_attr( $platform ); ?>">
+						<?php 
+						$badges = array(
+							'instagram' => '📷',
+							'youtube' => '▶️',
+							'tiktok' => '🎵',
+							'vimeo' => '🎬',
+							'facebook' => '👥',
+							'twitter' => '🐦',
+						);
+						echo isset( $badges[ $platform ] ) ? $badges[ $platform ] : '🎬';
+						?>
+					</div>
+				<?php endif; ?>
 			</div>
 
 			<div class="cdv-video-info">
@@ -251,19 +249,11 @@ class VideoStories {
 	 * @param string $autoplay_attr Autoplay attributes.
 	 */
 	private static function render_video_story_card( $post_id, $autoplay_attr = '' ): void {
-		$video_url = get_post_meta( $post_id, '_cdv_video_url', true );
-		
 		?>
 		<div class="cdv-story-item" data-story-id="<?php echo esc_attr( $post_id ); ?>">
-			<?php if ( $video_url ) : ?>
-				<video 
-					class="cdv-story-video" 
-					<?php echo $autoplay_attr; ?>
-					preload="auto"
-				>
-					<source src="<?php echo esc_url( $video_url ); ?>" type="video/mp4">
-				</video>
-			<?php endif; ?>
+			<div class="cdv-story-embed">
+				<?php echo \CdV\PostTypes\VideoStory::get_embed_html( $post_id ); ?>
+			</div>
 
 			<div class="cdv-story-info">
 				<div class="cdv-story-header">
