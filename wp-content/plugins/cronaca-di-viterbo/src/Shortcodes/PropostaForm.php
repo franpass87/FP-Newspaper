@@ -44,6 +44,10 @@ class PropostaForm {
 				'hide_empty' => false,
 			]
 		);
+		
+		if ( is_wp_error( $quartieri ) ) {
+			$quartieri = array();
+		}
 
 		$tematiche = get_terms(
 			[
@@ -51,6 +55,10 @@ class PropostaForm {
 				'hide_empty' => false,
 			]
 		);
+		
+		if ( is_wp_error( $tematiche ) ) {
+			$tematiche = array();
+		}
 
 		ob_start();
 		?>
