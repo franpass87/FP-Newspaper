@@ -328,7 +328,7 @@ class Bootstrap {
 		$load_poll = false;
 
 		// Verifica contenuto pagina per caricamento condizionale
-		if ( is_singular() && $post ) {
+		if ( is_singular() && $post && isset( $post->post_content ) ) {
 			$content = $post->post_content;
 			
 			// Form proposte
