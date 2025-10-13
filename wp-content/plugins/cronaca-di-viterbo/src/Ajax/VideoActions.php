@@ -54,7 +54,7 @@ class VideoActions {
 
 		// Check if already liked (by IP or user)
 		$user_id = get_current_user_id();
-		$ip = self::get_client_ip();
+		$ip = \CdV\Services\Security::get_client_ip();
 		$like_key = $user_id ? 'user_' . $user_id : 'ip_' . md5( $ip );
 		$liked_videos = get_transient( 'cdv_liked_videos_' . $like_key ) ?: array();
 
@@ -104,7 +104,7 @@ class VideoActions {
 
 		// Check if already viewed (by IP or user) in last hour
 		$user_id = get_current_user_id();
-		$ip = self::get_client_ip();
+		$ip = \CdV\Services\Security::get_client_ip();
 		$view_key = 'cdv_video_view_' . $video_id . '_' . ( $user_id ? 'user_' . $user_id : 'ip_' . md5( $ip ) );
 
 		if ( get_transient( $view_key ) ) {
@@ -131,22 +131,4 @@ class VideoActions {
 		) );
 	}
 
-	/**
-	 * Get client IP (proxy-aware)
-	 *
-	 * @return string IP address.
-	 */
-	private static function get_client_ip(): string {
-		$ip = '';
-
-		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
-		} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-		} elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-
-		return $ip;
-	}
 }

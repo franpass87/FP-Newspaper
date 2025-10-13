@@ -472,8 +472,23 @@ class VideoStory {
 	 * @param int $post_id Post ID.
 	 */
 	public static function increment_views( $post_id ): void {
-		$views = (int) get_post_meta( $post_id, '_cdv_video_views', true );
-		update_post_meta( $post_id, '_cdv_video_views', $views + 1 );
+		global $wpdb;
+		
+		// Assicuriamoci che il meta esista
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_video_views'",
+			$post_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			add_post_meta( $post_id, '_cdv_video_views', 1, true );
+		} else {
+			// UPDATE atomico
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_video_views'",
+				$post_id
+			) );
+		}
 	}
 
 	/**
@@ -482,7 +497,22 @@ class VideoStory {
 	 * @param int $post_id Post ID.
 	 */
 	public static function increment_likes( $post_id ): void {
-		$likes = (int) get_post_meta( $post_id, '_cdv_video_likes', true );
-		update_post_meta( $post_id, '_cdv_video_likes', $likes + 1 );
+		global $wpdb;
+		
+		// Assicuriamoci che il meta esista
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_video_likes'",
+			$post_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			add_post_meta( $post_id, '_cdv_video_likes', 1, true );
+		} else {
+			// UPDATE atomico
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_video_likes'",
+				$post_id
+			) );
+		}
 	}
 }
