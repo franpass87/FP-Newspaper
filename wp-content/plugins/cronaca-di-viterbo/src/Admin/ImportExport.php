@@ -335,6 +335,17 @@ nome,bio,ruolo,email,telefono
 			exit;
 		}
 
+		// Valida il tipo di file
+		$file_name = isset( $_FILES['import_file']['name'] ) ? sanitize_file_name( $_FILES['import_file']['name'] ) : '';
+		$file_type = isset( $_FILES['import_file']['type'] ) ? sanitize_text_field( $_FILES['import_file']['type'] ) : '';
+		$file_ext = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
+
+		// Permetti solo file CSV
+		if ( ! in_array( $file_ext, array( 'csv', 'txt' ), true ) ) {
+			wp_redirect( add_query_arg( array( 'page' => 'cdv-import-export', 'error' => 'invalid_file_type' ), admin_url( 'edit.php?post_type=cdv_proposta' ) ) );
+			exit;
+		}
+
 		$file = $_FILES['import_file']['tmp_name'];
 		$handle = fopen( $file, 'r' );
 
