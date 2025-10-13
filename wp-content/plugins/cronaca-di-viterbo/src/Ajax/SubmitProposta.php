@@ -132,8 +132,17 @@ class SubmitProposta {
 		}
 
 		// Assegna tassonomie
-		wp_set_object_terms( $post_id, $quartiere_id, 'cdv_quartiere' );
-		wp_set_object_terms( $post_id, $tematica_id, 'cdv_tematica' );
+		$quartiere_result = wp_set_object_terms( $post_id, $quartiere_id, 'cdv_quartiere' );
+		if ( is_wp_error( $quartiere_result ) ) {
+			// Log errore ma continua (non critico)
+			error_log( 'Errore assegnazione quartiere: ' . $quartiere_result->get_error_message() );
+		}
+		
+		$tematica_result = wp_set_object_terms( $post_id, $tematica_id, 'cdv_tematica' );
+		if ( is_wp_error( $tematica_result ) ) {
+			// Log errore ma continua (non critico)
+			error_log( 'Errore assegnazione tematica: ' . $tematica_result->get_error_message() );
+		}
 
 		// Inizializza voti a 0
 		update_post_meta( $post_id, '_cdv_votes', 0 );
