@@ -184,9 +184,9 @@
 		initProgressBars() {
 			$('.cdv-petition-progress-bar').each(function() {
 				const $bar = $(this);
-				const current = parseInt($bar.data('current'));
-				const goal = parseInt($bar.data('goal'));
-				const percentage = Math.min((current / goal) * 100, 100);
+				const current = parseInt($bar.data('current')) || 0;
+				const goal = parseInt($bar.data('goal')) || 0;
+				const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
 				
 				$bar.find('.cdv-progress-fill').css('width', percentage + '%');
 				$bar.find('.cdv-progress-text').text(`${current} / ${goal}`);
@@ -201,9 +201,9 @@
 			const $progressBar = $(`.cdv-petition-${petizioneId} .cdv-petition-progress-bar`);
 			if (!$progressBar.length) return;
 
-			const current = parseInt($(`.cdv-petition-${petizioneId} .cdv-signatures-count`).text());
-			const goal = parseInt($progressBar.data('goal'));
-			const percentage = Math.min((current / goal) * 100, 100);
+			const current = parseInt($(`.cdv-petition-${petizioneId} .cdv-signatures-count`).text()) || 0;
+			const goal = parseInt($progressBar.data('goal')) || 0;
+			const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
 
 			$progressBar.find('.cdv-progress-fill')
 				.animate({ width: percentage + '%' }, 500);

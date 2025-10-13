@@ -34,7 +34,7 @@ class FirmaPetizione {
 		$email = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
 		$comune = isset( $_POST['comune'] ) ? Sanitization::sanitize_title( $_POST['comune'] ) : '';
 		$motivazione = isset( $_POST['motivazione'] ) ? Sanitization::sanitize_content( $_POST['motivazione'] ) : '';
-		$privacy = isset( $_POST['privacy'] ) ? $_POST['privacy'] : '';
+		$privacy = isset( $_POST['privacy'] ) ? sanitize_text_field( $_POST['privacy'] ) : '';
 
 		// Validate
 		if ( ! $petizione_id || get_post_type( $petizione_id ) !== 'cdv_petizione' ) {
@@ -99,7 +99,7 @@ class FirmaPetizione {
 				'privacy_accepted' => 1,
 				'verified'         => $user_id > 0 ? 1 : 0,
 				'ip_address'       => $ip,
-				'user_agent'       => isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( $_SERVER['HTTP_USER_AGENT'], 0, 255 ) : '',
+				'user_agent'       => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( substr( $_SERVER['HTTP_USER_AGENT'], 0, 255 ) ) : '',
 			),
 			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
 		);

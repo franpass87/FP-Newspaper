@@ -274,8 +274,22 @@
 	 * Update sondaggio results display
 	 */
 	function updateSondaggioResults($wrapper, results) {
-		results.forEach(function(result, index) {
-			var $option = $wrapper.find('.cdv-sondaggio-option').eq(index);
+		results.forEach(function(result) {
+			// Trova l'opzione in base al testo dell'opzione, non all'indice dell'array
+			var $options = $wrapper.find('.cdv-sondaggio-option');
+			var $option = null;
+			
+			$options.each(function() {
+				if ($(this).find('label').text().trim() === result.option) {
+					$option = $(this);
+					return false; // break
+				}
+			});
+			
+			if (!$option || $option.length === 0) {
+				return; // skip questa opzione se non trovata
+			}
+			
 			var $stats = $option.find('.cdv-option-stats');
 			
 			if ($stats.length === 0) {
