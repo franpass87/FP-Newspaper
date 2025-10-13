@@ -41,7 +41,16 @@ class MappaInterattiva {
 		$markers = self::get_markers( $atts );
 
 		$map_id = 'cdv-map-' . uniqid();
-		list( $lat, $lng ) = explode( ',', $atts['center'] );
+		
+		// Valida e parse le coordinate
+		$center_parts = explode( ',', $atts['center'] );
+		if ( count( $center_parts ) !== 2 ) {
+			// Fallback a coordinate di Viterbo se il formato non è valido
+			$center_parts = array( '42.4175', '12.1089' );
+		}
+		list( $lat, $lng ) = $center_parts;
+		$lat = floatval( trim( $lat ) );
+		$lng = floatval( trim( $lng ) );
 
 		ob_start();
 		?>

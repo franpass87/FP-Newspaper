@@ -397,7 +397,13 @@ class AIChatbot {
 			return false;
 		}
 
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Verifica che json_decode sia riuscito
+		if ( ! is_array( $data ) || json_last_error() !== JSON_ERROR_NONE ) {
+			return false;
+		}
 
 		if ( isset( $data['choices'][0]['message']['content'] ) ) {
 			return trim( $data['choices'][0]['message']['content'] );
@@ -446,7 +452,13 @@ class AIChatbot {
 			return false;
 		}
 
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Verifica che json_decode sia riuscito
+		if ( ! is_array( $data ) || json_last_error() !== JSON_ERROR_NONE ) {
+			return false;
+		}
 
 		if ( isset( $data['content'][0]['text'] ) ) {
 			return trim( $data['content'][0]['text'] );
