@@ -123,7 +123,7 @@
 			// Valida email
 			$form.find('input[type="email"]').each(function() {
 				const email = $(this).val();
-				if (email && !this.isValidEmail(email)) {
+				if (email && !AdminSettings.isValidEmail(email)) {
 					$(this).addClass('error');
 					valid = false;
 				}
