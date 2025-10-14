@@ -21,12 +21,12 @@
 		/**
 		 * Inizializza i grafici
 		 */
-	initCharts() {
-		// Placeholder per integrazione chart.js o similar
-		if (window.console && window.cdvDebug) {
-			console.log('Dashboard charts initialized');
-		}
-	},
+		initCharts() {
+			// Placeholder per integrazione chart.js o similar
+			if (window.console && window.cdvDebug) {
+				console.log('Dashboard charts initialized');
+			}
+		},
 
 		/**
 		 * Inizializza refresh statistiche

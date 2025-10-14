@@ -121,8 +121,10 @@ class ProposteWidget extends \WP_Widget {
 				<option value=""><?php esc_html_e( 'Tutti i quartieri', 'cronaca-di-viterbo' ); ?></option>
 				<?php
 				$quartieri = get_terms( array( 'taxonomy' => 'cdv_quartiere', 'hide_empty' => false ) );
-				foreach ( $quartieri as $q ) {
-					echo '<option value="' . esc_attr( $q->slug ) . '"' . selected( $quartiere, $q->slug, false ) . '>' . esc_html( $q->name ) . '</option>';
+				if ( ! is_wp_error( $quartieri ) && ! empty( $quartieri ) ) {
+					foreach ( $quartieri as $q ) {
+						echo '<option value="' . esc_attr( $q->slug ) . '"' . selected( $quartiere, $q->slug, false ) . '>' . esc_html( $q->name ) . '</option>';
+					}
 				}
 				?>
 			</select>

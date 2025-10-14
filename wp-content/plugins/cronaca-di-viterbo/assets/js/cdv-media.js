@@ -61,14 +61,20 @@
 						nonce: cdvData.nonce,
 						video_id: videoId
 					},
-					success(response) {
-						if (response.success) {
-							$btn.addClass('liked');
-							const $count = $btn.find('.cdv-likes-count');
+				success(response) {
+					if (response.success) {
+						$btn.addClass('liked');
+						const $count = $btn.find('.cdv-likes-count');
+						// Usa il conteggio dal server per evitare discrepanze
+						if (response.data && response.data.likes !== undefined) {
+							$count.text(response.data.likes.toLocaleString());
+						} else {
+							// Fallback: incremento locale
 							const current = parseInt($count.text().replace(/[^0-9]/g, '')) || 0;
 							$count.text((current + 1).toLocaleString());
 						}
 					}
+				}
 				});
 			});
 

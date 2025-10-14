@@ -51,12 +51,12 @@ class SondaggioForm {
 
 		if ( $mostra_risultati ) {
 			$raw_results = $wpdb->get_results( $wpdb->prepare(
-				"SELECT option_index, COUNT(*) as votes FROM $table WHERE sondaggio_id = %d GROUP BY option_index",
+				"SELECT option_index, COUNT(*) as votes FROM `{$table}` WHERE sondaggio_id = %d GROUP BY option_index",
 				$sondaggio_id
 			) );
 
 			$total_partecipanti = $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(DISTINCT user_identifier) FROM $table WHERE sondaggio_id = %d",
+				"SELECT COUNT(DISTINCT user_identifier) FROM `{$table}` WHERE sondaggio_id = %d",
 				$sondaggio_id
 			) );
 

@@ -142,16 +142,16 @@ class Blocks {
 	 */
 	public static function render_proposte_block( $attributes ): string {
 		$atts = array(
-			'limit'     => $attributes['limit'] ?? 5,
-			'quartiere' => $attributes['quartiere'] ?? '',
-			'orderby'   => $attributes['orderby'] ?? 'date',
+			'limit'     => absint( $attributes['limit'] ?? 5 ),
+			'quartiere' => sanitize_text_field( $attributes['quartiere'] ?? '' ),
+			'orderby'   => sanitize_text_field( $attributes['orderby'] ?? 'date' ),
 		);
 
 		return do_shortcode( sprintf(
 			'[cdv_proposte limit="%d" quartiere="%s" orderby="%s"]',
 			$atts['limit'],
-			$atts['quartiere'],
-			$atts['orderby']
+			esc_attr( $atts['quartiere'] ),
+			esc_attr( $atts['orderby'] )
 		) );
 	}
 
@@ -163,14 +163,14 @@ class Blocks {
 	 */
 	public static function render_petizioni_block( $attributes ): string {
 		$atts = array(
-			'limit'  => $attributes['limit'] ?? 5,
-			'status' => $attributes['status'] ?? 'aperte',
+			'limit'  => absint( $attributes['limit'] ?? 5 ),
+			'status' => sanitize_text_field( $attributes['status'] ?? 'aperte' ),
 		);
 
 		return do_shortcode( sprintf(
 			'[cdv_petizioni limit="%d" status="%s"]',
 			$atts['limit'],
-			$atts['status']
+			esc_attr( $atts['status'] )
 		) );
 	}
 
@@ -181,7 +181,7 @@ class Blocks {
 	 * @return string
 	 */
 	public static function render_dashboard_block( $attributes ): string {
-		$periodo = $attributes['periodo'] ?? 30;
+		$periodo = absint( $attributes['periodo'] ?? 30 );
 		return do_shortcode( sprintf( '[cdv_dashboard periodo="%d"]', $periodo ) );
 	}
 
@@ -192,7 +192,7 @@ class Blocks {
 	 * @return string
 	 */
 	public static function render_profile_block( $attributes ): string {
-		$user_id = $attributes['userId'] ?? 0;
+		$user_id = absint( $attributes['userId'] ?? 0 );
 		return do_shortcode( sprintf( '[cdv_user_profile user_id="%d"]', $user_id ) );
 	}
 
@@ -204,14 +204,14 @@ class Blocks {
 	 */
 	public static function render_mappa_block( $attributes ): string {
 		$atts = array(
-			'tipo'   => $attributes['tipo'] ?? 'proposte',
-			'height' => $attributes['height'] ?? '500px',
+			'tipo'   => sanitize_text_field( $attributes['tipo'] ?? 'proposte' ),
+			'height' => sanitize_text_field( $attributes['height'] ?? '500px' ),
 		);
 
 		return do_shortcode( sprintf(
 			'[cdv_mappa tipo="%s" height="%s"]',
-			$atts['tipo'],
-			$atts['height']
+			esc_attr( $atts['tipo'] ),
+			esc_attr( $atts['height'] )
 		) );
 	}
 
@@ -223,6 +223,10 @@ class Blocks {
 	private static function get_quartieri_options(): array {
 		$terms = get_terms( array( 'taxonomy' => 'cdv_quartiere', 'hide_empty' => false ) );
 		$options = array();
+
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return $options;
+		}
 
 		foreach ( $terms as $term ) {
 			$options[] = array(
@@ -242,6 +246,10 @@ class Blocks {
 	private static function get_tematiche_options(): array {
 		$terms = get_terms( array( 'taxonomy' => 'cdv_tematica', 'hide_empty' => false ) );
 		$options = array();
+
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return $options;
+		}
 
 		foreach ( $terms as $term ) {
 			$options[] = array(

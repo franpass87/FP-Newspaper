@@ -47,10 +47,10 @@
 				window.CdV.PetitionHandler.init();
 			}
 
-			// Inizializza Poll Handler (se caricato)
-			if (window.CdV.PollHandler) {
-				window.CdV.PollHandler.init();
-			}
+		// Inizializza Poll Handler (se caricato)
+		if (window.CdV.PollHandler) {
+			window.CdV.PollHandler.init();
+		}
 
 		// Log inizializzazione completata (development only)
 		if (window.console && window.cdvDebug) {
@@ -59,7 +59,7 @@
 			);
 			console.log('CdV: Moduli inizializzati:', loadedModules.join(', '));
 		}
-		}
+	}
 	};
 
 	// Avvia l'applicazione

@@ -176,12 +176,12 @@ class Sondaggio {
 		$table = $wpdb->prefix . 'cdv_sondaggi_voti';
 
 		$total = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT user_identifier) FROM $table WHERE sondaggio_id = %d",
+			"SELECT COUNT(DISTINCT user_identifier) FROM `{$table}` WHERE sondaggio_id = %d",
 			$post->ID
 		) );
 
 		$results = $wpdb->get_results( $wpdb->prepare(
-			"SELECT option_index, COUNT(*) as votes FROM $table WHERE sondaggio_id = %d GROUP BY option_index ORDER BY option_index",
+			"SELECT option_index, COUNT(*) as votes FROM `{$table}` WHERE sondaggio_id = %d GROUP BY option_index ORDER BY option_index",
 			$post->ID
 		) );
 

@@ -82,10 +82,29 @@ class VoteProposta {
 			);
 		}
 
-		// Incrementa voti (atomico)
-		$current_votes = (int) get_post_meta( $proposta_id, '_cdv_votes', true );
-		$new_votes = $current_votes + 1;
-		update_post_meta( $proposta_id, '_cdv_votes', $new_votes );
+		// Incrementa voti in modo atomico usando una query SQL diretta
+		global $wpdb;
+		
+		// Prima assicuriamoci che il meta esista
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_votes'",
+			$proposta_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			// Se non esiste, crealo con valore 1
+			add_post_meta( $proposta_id, '_cdv_votes', 1, true );
+			$new_votes = 1;
+		} else {
+			// UPDATE atomico: incrementa direttamente nel database
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_votes'",
+				$proposta_id
+			) );
+			
+			// Recupera il nuovo valore
+			$new_votes = (int) get_post_meta( $proposta_id, '_cdv_votes', true );
+		}
 
 		// Imposta cooldown di 1 ora
 		set_transient( $cooldown_key, true, HOUR_IN_SECONDS );

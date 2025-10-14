@@ -234,10 +234,29 @@ class Reputazione {
 	 * @param string $reason  Reason.
 	 */
 	public static function add_points( int $user_id, int $points, string $reason = '' ): void {
-		$current_points = intval( get_user_meta( $user_id, 'cdv_points', true ) );
-		$new_points = $current_points + $points;
-
-		update_user_meta( $user_id, 'cdv_points', $new_points );
+		global $wpdb;
+		
+		// Usa un UPDATE atomico per evitare race conditions
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT umeta_id FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = 'cdv_points'",
+			$user_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			// Prima volta, crea il meta
+			add_user_meta( $user_id, 'cdv_points', $points, true );
+			$new_points = $points;
+		} else {
+			// UPDATE atomico
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->usermeta} SET meta_value = CAST(meta_value AS UNSIGNED) + %d WHERE user_id = %d AND meta_key = 'cdv_points'",
+				$points,
+				$user_id
+			) );
+			
+			// Recupera il nuovo valore
+			$new_points = intval( get_user_meta( $user_id, 'cdv_points', true ) );
+		}
 
 		// Log activity
 		$log = get_user_meta( $user_id, 'cdv_points_log', true ) ?: array();
@@ -360,7 +379,7 @@ class Reputazione {
 		$table = $wpdb->prefix . 'cdv_petizioni_firme';
 
 		return intval( $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM $table WHERE user_id = %d",
+			"SELECT COUNT(*) FROM `{$table}` WHERE user_id = %d",
 			$user_id
 		) ) );
 	}
@@ -376,7 +395,7 @@ class Reputazione {
 		$table = $wpdb->prefix . 'cdv_sondaggi_voti';
 
 		return intval( $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT sondaggio_id) FROM $table WHERE user_id = %d",
+			"SELECT COUNT(DISTINCT sondaggio_id) FROM `{$table}` WHERE user_id = %d",
 			$user_id
 		) ) );
 	}

@@ -150,7 +150,7 @@ class AIChatbot {
 
 		// Rate limiting (simple check)
 		$user_id = get_current_user_id();
-		$ip = self::get_client_ip();
+		$ip = Security::get_client_ip();
 		$cache_key = 'cdv_chatbot_' . ( $user_id ?: $ip );
 		$last_request = get_transient( $cache_key );
 
@@ -397,7 +397,13 @@ class AIChatbot {
 			return false;
 		}
 
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Verifica che json_decode sia riuscito
+		if ( ! is_array( $data ) || json_last_error() !== JSON_ERROR_NONE ) {
+			return false;
+		}
 
 		if ( isset( $data['choices'][0]['message']['content'] ) ) {
 			return trim( $data['choices'][0]['message']['content'] );
@@ -446,7 +452,13 @@ class AIChatbot {
 			return false;
 		}
 
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Verifica che json_decode sia riuscito
+		if ( ! is_array( $data ) || json_last_error() !== JSON_ERROR_NONE ) {
+			return false;
+		}
 
 		if ( isset( $data['content'][0]['text'] ) ) {
 			return trim( $data['content'][0]['text'] );
@@ -468,25 +480,6 @@ class AIChatbot {
 		);
 
 		return $fallbacks[ array_rand( $fallbacks ) ];
-	}
-
-	/**
-	 * Get client IP (proxy-aware)
-	 *
-	 * @return string IP address.
-	 */
-	private static function get_client_ip(): string {
-		$ip = '';
-
-		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
-		} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-		} elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-
-		return $ip;
 	}
 
 	/**

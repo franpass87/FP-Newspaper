@@ -180,7 +180,7 @@ class VotazioneAvanzata {
 		$table = $wpdb->prefix . 'cdv_voti_dettagli';
 
 		$total = $wpdb->get_var( $wpdb->prepare(
-			"SELECT SUM(weight) FROM $table WHERE proposta_id = %d",
+			"SELECT SUM(weight) FROM `{$table}` WHERE proposta_id = %d",
 			$proposta_id
 		) );
 
@@ -204,7 +204,7 @@ class VotazioneAvanzata {
 				SUM(is_resident) as residents,
 				SUM(is_verified) as verified,
 				AVG(weight) as avg_weight
-			FROM $table 
+			FROM `{$table}` 
 			WHERE proposta_id = %d",
 			$proposta_id
 		), ARRAY_A );
@@ -276,15 +276,40 @@ class VotazioneAvanzata {
 	 * @param int $user_id     User ID.
 	 */
 	public static function cast_weighted_vote( int $proposta_id, int $user_id ): void {
+		global $wpdb;
+		
 		$weight = apply_filters( 'cdv_vote_weight', 1.0, $user_id, $proposta_id );
 		
-		// Update simple count
-		$current_votes = intval( get_post_meta( $proposta_id, '_cdv_votes', true ) );
-		update_post_meta( $proposta_id, '_cdv_votes', $current_votes + 1 );
+		// Update simple count (atomico)
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_votes'",
+			$proposta_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			add_post_meta( $proposta_id, '_cdv_votes', 1, true );
+		} else {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_votes'",
+				$proposta_id
+			) );
+		}
 
-		// Update weighted count
-		$current_weighted = floatval( get_post_meta( $proposta_id, '_cdv_weighted_votes', true ) );
-		update_post_meta( $proposta_id, '_cdv_weighted_votes', $current_weighted + $weight );
+		// Update weighted count (atomico)
+		$weighted_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_weighted_votes'",
+			$proposta_id
+		) );
+		
+		if ( ! $weighted_exists ) {
+			add_post_meta( $proposta_id, '_cdv_weighted_votes', $weight, true );
+		} else {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = CAST(meta_value AS DECIMAL(10,2)) + %f WHERE post_id = %d AND meta_key = '_cdv_weighted_votes'",
+				$weight,
+				$proposta_id
+			) );
+		}
 
 		// Save details
 		do_action( 'cdv_after_vote', $proposta_id, $user_id, $weight );

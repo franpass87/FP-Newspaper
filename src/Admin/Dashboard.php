@@ -271,7 +271,7 @@ class Dashboard {
 	private static function count_total_firme(): int {
 		global $wpdb;
 		$table = $wpdb->prefix . 'cdv_petizioni_firme';
-		return intval( $wpdb->get_var( "SELECT COUNT(*) FROM $table" ) );
+		return intval( $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" ) );
 	}
 
 	/**

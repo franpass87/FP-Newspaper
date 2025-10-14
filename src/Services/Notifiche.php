@@ -340,6 +340,6 @@ class Notifiche {
 		global $wpdb;
 		$table = $wpdb->prefix . 'cdv_subscribers';
 
-		return $wpdb->get_results( "SELECT * FROM $table WHERE active = 1", ARRAY_A );
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE active = %d", 1 ), ARRAY_A );
 	}
 }

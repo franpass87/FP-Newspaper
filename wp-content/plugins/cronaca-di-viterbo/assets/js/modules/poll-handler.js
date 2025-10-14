@@ -107,19 +107,19 @@
 					this.handleError(response.data.message);
 				}
 			},
-				error: () => {
-					this.handleError('Errore di connessione');
-				},
-				complete: () => {
-					if ($submitBtn) {
-						$submitBtn.prop('disabled', false).text('Vota');
-					}
-					if ($option) {
-						$option.removeClass('voting');
-					}
+			error: () => {
+				this.handleError('Errore di connessione');
+			},
+			complete: () => {
+				if ($submitBtn) {
+					$submitBtn.prop('disabled', false).text('Vota');
 				}
-			});
-		},
+				if ($option) {
+					$option.removeClass('voting');
+				}
+			}
+		});
+	},
 
 	/**
 	 * Gestisce successo
@@ -240,8 +240,17 @@
 		}
 
 		risultati.forEach(result => {
-			const $resultRow = $results.find(`.cdv-result-row:contains("${result.option}")`).first();
-			if ($resultRow.length) {
+			// Trova la riga corretta confrontando il testo dell'opzione in modo sicuro
+			let $resultRow = null;
+			$results.find('.cdv-result-row').each(function() {
+				const optionText = $(this).find('.cdv-result-option').text().trim();
+				if (optionText === result.option) {
+					$resultRow = $(this);
+					return false; // break
+				}
+			});
+			
+			if ($resultRow && $resultRow.length) {
 				$resultRow.find('.cdv-result-percentage').text(`${result.percentage}% (${result.votes} voti)`);
 				$resultRow.find('.cdv-result-fill').animate({ width: result.percentage + '%' }, 500);
 			}

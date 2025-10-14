@@ -422,8 +422,36 @@ class VideoStory {
 			$body = wp_remote_retrieve_body( $response );
 			$data = json_decode( $body, true );
 			
-			if ( isset( $data['html'] ) ) {
-				return '<div class="cdv-embed-responsive cdv-embed-instagram cdv-format-' . esc_attr( $format ) . '">' . $data['html'] . '</div>';
+			// Verifica che json_decode sia riuscito e che l'HTML esista
+			if ( is_array( $data ) && isset( $data['html'] ) && ! empty( $data['html'] ) ) {
+				// Sanitizza l'HTML da API esterna usando wp_kses con tag iframe permessi
+				$allowed_html = array(
+					'iframe' => array(
+						'src' => array(),
+						'width' => array(),
+						'height' => array(),
+						'frameborder' => array(),
+						'class' => array(),
+						'allowfullscreen' => array(),
+						'style' => array(),
+					),
+					'blockquote' => array(
+						'class' => array(),
+						'data-instgrm-permalink' => array(),
+						'data-instgrm-version' => array(),
+					),
+					'a' => array(
+						'href' => array(),
+						'target' => array(),
+						'rel' => array(),
+					),
+					'script' => array(
+						'async' => array(),
+						'src' => array(),
+					),
+				);
+				$sanitized_html = wp_kses( $data['html'], $allowed_html );
+				return '<div class="cdv-embed-responsive cdv-embed-instagram cdv-format-' . esc_attr( $format ) . '">' . $sanitized_html . '</div>';
 			}
 		}
 
@@ -452,8 +480,31 @@ class VideoStory {
 			$body = wp_remote_retrieve_body( $response );
 			$data = json_decode( $body, true );
 			
-			if ( isset( $data['html'] ) ) {
-				return '<div class="cdv-embed-responsive cdv-embed-tiktok cdv-format-' . esc_attr( $format ) . '">' . $data['html'] . '</div>';
+			// Verifica che json_decode sia riuscito e che l'HTML esista
+			if ( is_array( $data ) && isset( $data['html'] ) && ! empty( $data['html'] ) ) {
+				// Sanitizza l'HTML da API esterna
+				$allowed_html = array(
+					'blockquote' => array(
+						'class' => array(),
+						'cite' => array(),
+						'data-video-id' => array(),
+					),
+					'section' => array(
+						'style' => array(),
+					),
+					'a' => array(
+						'href' => array(),
+						'target' => array(),
+						'rel' => array(),
+						'title' => array(),
+					),
+					'script' => array(
+						'async' => array(),
+						'src' => array(),
+					),
+				);
+				$sanitized_html = wp_kses( $data['html'], $allowed_html );
+				return '<div class="cdv-embed-responsive cdv-embed-tiktok cdv-format-' . esc_attr( $format ) . '">' . $sanitized_html . '</div>';
 			}
 		}
 
@@ -472,8 +523,23 @@ class VideoStory {
 	 * @param int $post_id Post ID.
 	 */
 	public static function increment_views( $post_id ): void {
-		$views = (int) get_post_meta( $post_id, '_cdv_video_views', true );
-		update_post_meta( $post_id, '_cdv_video_views', $views + 1 );
+		global $wpdb;
+		
+		// Assicuriamoci che il meta esista
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_video_views'",
+			$post_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			add_post_meta( $post_id, '_cdv_video_views', 1, true );
+		} else {
+			// UPDATE atomico
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_video_views'",
+				$post_id
+			) );
+		}
 	}
 
 	/**
@@ -482,7 +548,22 @@ class VideoStory {
 	 * @param int $post_id Post ID.
 	 */
 	public static function increment_likes( $post_id ): void {
-		$likes = (int) get_post_meta( $post_id, '_cdv_video_likes', true );
-		update_post_meta( $post_id, '_cdv_video_likes', $likes + 1 );
+		global $wpdb;
+		
+		// Assicuriamoci che il meta esista
+		$meta_exists = $wpdb->get_var( $wpdb->prepare(
+			"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_cdv_video_likes'",
+			$post_id
+		) );
+		
+		if ( ! $meta_exists ) {
+			add_post_meta( $post_id, '_cdv_video_likes', 1, true );
+		} else {
+			// UPDATE atomico
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_cdv_video_likes'",
+				$post_id
+			) );
+		}
 	}
 }
