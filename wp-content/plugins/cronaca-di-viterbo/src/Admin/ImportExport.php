@@ -286,7 +286,7 @@ nome,bio,ruolo,email,telefono
 		$table = $wpdb->prefix . 'cdv_petizioni_firme';
 
 		$firme = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM $table WHERE petizione_id = %d ORDER BY created_at DESC",
+			"SELECT * FROM `{$table}` WHERE petizione_id = %d ORDER BY created_at DESC",
 			$petizione_id
 		), ARRAY_A );
 

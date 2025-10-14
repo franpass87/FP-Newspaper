@@ -379,7 +379,7 @@ class Reputazione {
 		$table = $wpdb->prefix . 'cdv_petizioni_firme';
 
 		return intval( $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM $table WHERE user_id = %d",
+			"SELECT COUNT(*) FROM `{$table}` WHERE user_id = %d",
 			$user_id
 		) ) );
 	}
@@ -395,7 +395,7 @@ class Reputazione {
 		$table = $wpdb->prefix . 'cdv_sondaggi_voti';
 
 		return intval( $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT sondaggio_id) FROM $table WHERE user_id = %d",
+			"SELECT COUNT(DISTINCT sondaggio_id) FROM `{$table}` WHERE user_id = %d",
 			$user_id
 		) ) );
 	}

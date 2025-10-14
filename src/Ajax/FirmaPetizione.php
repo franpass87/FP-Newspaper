@@ -69,7 +69,7 @@ class FirmaPetizione {
 		global $wpdb;
 		$table = $wpdb->prefix . 'cdv_petizioni_firme';
 		$existing = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM $table WHERE petizione_id = %d AND email = %s",
+			"SELECT id FROM `{$table}` WHERE petizione_id = %d AND email = %s",
 			$petizione_id,
 			$email
 		) );

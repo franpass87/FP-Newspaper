@@ -180,7 +180,7 @@ class VotazioneAvanzata {
 		$table = $wpdb->prefix . 'cdv_voti_dettagli';
 
 		$total = $wpdb->get_var( $wpdb->prepare(
-			"SELECT SUM(weight) FROM $table WHERE proposta_id = %d",
+			"SELECT SUM(weight) FROM `{$table}` WHERE proposta_id = %d",
 			$proposta_id
 		) );
 
@@ -204,7 +204,7 @@ class VotazioneAvanzata {
 				SUM(is_resident) as residents,
 				SUM(is_verified) as verified,
 				AVG(weight) as avg_weight
-			FROM $table 
+			FROM `{$table}` 
 			WHERE proposta_id = %d",
 			$proposta_id
 		), ARRAY_A );
