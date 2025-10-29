@@ -1,0 +1,25 @@
+{
+  "name": "fp/newspaper",
+  "description": "Plugin WordPress per gestione contenuti editoriali",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Francesco Passeri",
+      "email": "info@francescopasseri.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "FPNewspaper\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
+

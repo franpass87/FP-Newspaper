@@ -1,0 +1,177 @@
+# Copyright (C) 2025 Francesco Passeri
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: FP Newspaper 1.0.0\n"
+"Report-Msgid-Bugs-To: info@francescopasseri.com\n"
+"POT-Creation-Date: 2025-10-29 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: fp-newspaper.php
+msgid "FP Newspaper"
+msgstr ""
+
+#: fp-newspaper.php
+msgid "Plugin per gestione contenuti editoriali e pubblicazione di articoli in stile giornalistico"
+msgstr ""
+
+#: src/Plugin.php
+msgid "FP Newspaper"
+msgstr ""
+
+#: src/Plugin.php
+msgid "Gestione contenuti editoriali e articoli."
+msgstr ""
+
+#: src/Plugin.php
+msgid "Non hai i permessi per accedere a questa pagina."
+msgstr ""
+
+#: src/Activation.php
+msgid "FP Newspaper richiede PHP 7.4 o superiore."
+msgstr ""
+
+#: src/Activation.php
+msgid "Errore attivazione plugin"
+msgstr ""
+
+#: src/Activation.php
+msgid "FP Newspaper richiede WordPress 6.0 o superiore."
+msgstr ""
+
+#: src/Activation.php
+msgid "Archivio Notizie"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "Post type general name"
+msgid "Articoli"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "Post type singular name"
+msgid "Articolo"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Aggiungi Nuovo"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Aggiungi Nuovo Articolo"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Modifica Articolo"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Visualizza Articolo"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Tutti gli Articoli"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Cerca Articoli"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Nessun articolo trovato."
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Nessun articolo nel cestino."
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "taxonomy general name"
+msgid "Categorie"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "taxonomy singular name"
+msgid "Categoria"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Cerca Categorie"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Tutte le Categorie"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Categoria Padre"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Modifica Categoria"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Aggiungi Nuova Categoria"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "taxonomy general name"
+msgid "Tag"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgctxt "taxonomy singular name"
+msgid "Tag"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Cerca Tag"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Tutti i Tag"
+msgstr ""
+
+#: src/PostTypes/Article.php
+msgid "Aggiungi Nuovo Tag"
+msgstr ""
+
+#: src/REST/Controller.php
+msgid "Articolo non trovato"
+msgstr ""
+
+#: src/REST/Controller.php
+msgid "Visualizzazione registrata"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Opzioni Articolo"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Statistiche Articolo"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Articolo in evidenza"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Breaking News"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Visualizzazioni:"
+msgstr ""
+
+#: src/Admin/MetaBoxes.php
+msgid "Condivisioni:"
+msgstr ""
+

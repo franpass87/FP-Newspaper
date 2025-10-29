@@ -1,0 +1,85 @@
+/**
+ * FP Newspaper - Admin Styles
+ * 
+ * @package FPNewspaper
+ * @version 1.0.0
+ */
+
+/* === Admin Dashboard === */
+.wrap.fp-newspaper-admin {
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.fp-newspaper-admin h1 {
+    color: #1d2327;
+    margin-bottom: 20px;
+}
+
+/* === Meta Boxes === */
+.fp-article-meta-box p {
+    margin: 10px 0;
+}
+
+.fp-article-meta-box label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.fp-article-meta-box input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* === Statistiche === */
+.fp-article-stats p {
+    padding: 10px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+.fp-article-stats strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #1d2327;
+}
+
+/* === Admin Menu Icon === */
+.dashicons-media-text {
+    color: #2271b1;
+}
+
+/* === Breaking News Badge === */
+.fp-breaking-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #d63638;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+/* === Featured Badge === */
+.fp-featured-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #dba617;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+/* === Responsive === */
+@media screen and (max-width: 782px) {
+    .wrap.fp-newspaper-admin {
+        margin: 10px;
+    }
+}
+
