@@ -180,3 +180,4 @@ class LatestArticles extends \WP_Widget {
     }
 }
 
+

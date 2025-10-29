@@ -155,3 +155,4 @@ class Hooks {
     // apply_filters('fp_newspaper_bulk_actions', $actions);
 }
 
+

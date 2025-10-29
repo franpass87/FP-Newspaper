@@ -418,3 +418,4 @@ Il plugin è progettato per essere esteso. Usa hooks e filtri invece di modifica
 Francesco Passeri  
 info@francescopasseri.com
 
+
