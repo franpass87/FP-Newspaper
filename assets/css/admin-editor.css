@@ -1,0 +1,27 @@
+/**
+ * FP Newspaper - Admin Editor Styles
+ * Post editor meta boxes
+ * 
+ * @package FPNewspaper
+ * @version 1.6.0
+ */
+
+/* Story Formats meta box styling */
+#fp_story_format {
+    width: 100%;
+}
+
+.fp-format-description {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Desk selector */
+#fp-desk-selector select {
+    width: 100%;
+}
+
+

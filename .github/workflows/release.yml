@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    name: Build Release Package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, json
+      
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --prefer-dist
+      
+      - name: Remove dev files
+        run: |
+          rm -rf tests/
+          rm -rf .github/
+          rm -f phpunit.xml
+          rm -f phpstan.neon
+          rm -f .gitignore
+          rm -f .gitattributes
+          rm -f composer.lock
+      
+      - name: Create ZIP package
+        run: |
+          cd ..
+          zip -r FP-Newspaper-${GITHUB_REF#refs/tags/}.zip FP-Newspaper/ \
+            -x "*.git*" "*node_modules*" "*.DS_Store"
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ../FP-Newspaper-*.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

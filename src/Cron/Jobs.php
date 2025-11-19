@@ -107,7 +107,7 @@ class Jobs {
         
         if ($stats && !is_wp_error($stats)) {
             $cache_data = [
-                'total_articles' => wp_count_posts('fp_article')->publish,
+                'total_articles' => wp_count_posts('post')->publish,
                 'total_views'    => (int) $stats->total_views,
                 'total_shares'   => (int) $stats->total_shares,
             ];
@@ -119,5 +119,10 @@ class Jobs {
         do_action('fp_newspaper_after_stats_update', $stats);
     }
 }
+
+
+
+
+
 
 

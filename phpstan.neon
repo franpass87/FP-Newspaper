@@ -1,0 +1,16 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - src/index.php
+        - src/*/index.php
+    ignoreErrors:
+        # WordPress functions not recognized
+        - '#Function (add_action|add_filter|get_option|update_option|delete_option|get_transient|set_transient|delete_transient|wp_.*|esc_.*|__)\(\) invoked with#'
+        - '#Constant (ABSPATH|WP_DEBUG|HOUR_IN_SECONDS|DAY_IN_SECONDS) not found#'
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    reportUnmatchedIgnoredErrors: false
+
+

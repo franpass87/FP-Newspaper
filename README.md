@@ -184,6 +184,23 @@ Seleziona più articoli e usa:
 [fp_article_stats id="123"]
 ```
 
+### Archivio Completo
+
+```
+[fp_newspaper_archive per_page="12" layout="grid" show_filters="yes"]
+```
+
+**Parametri:**
+- `per_page` - Articoli per pagina (max 50, default 12)
+- `layout` - `grid` o `list`
+- `show_filters` - `yes` o `no` (default: yes)
+
+Questo shortcode crea un archivio completo con:
+- Filtri per categoria e tag
+- Paginazione
+- Layout responsive
+- Contatore risultati
+
 ---
 
 ## 🔧 WP-CLI

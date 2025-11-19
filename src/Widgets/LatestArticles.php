@@ -44,7 +44,7 @@ class LatestArticles extends \WP_Widget {
         $show_date = !empty($instance['show_date']);
         
         $query_args = [
-            'post_type'      => 'fp_article',
+            'post_type'      => 'post',
             'posts_per_page' => min($count, 20),
             'post_status'    => 'publish',
             'orderby'        => 'date',
@@ -179,5 +179,10 @@ class LatestArticles extends \WP_Widget {
         return $instance;
     }
 }
+
+
+
+
+
 
 

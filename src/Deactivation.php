@@ -34,6 +34,9 @@ class Deactivation {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('FP Newspaper: Plugin disattivato');
         }
+        
+        // Fire action hook
+        do_action('fp_newspaper_before_deactivation');
     }
     
     /**

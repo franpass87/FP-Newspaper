@@ -169,3 +169,8 @@ Contribuendo, accetti che i tuoi contributi siano rilasciati sotto licenza GPL v
 Insieme rendiamo questo plugin ancora migliore! 🚀
 
 
+
+
+
+
+

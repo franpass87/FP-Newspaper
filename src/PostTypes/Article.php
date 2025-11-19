@@ -1,6 +1,6 @@
 <?php
 /**
- * Custom Post Type: Articolo
+ * Estensioni per Post Type Nativo di WordPress
  *
  * @package FPNewspaper
  */
@@ -10,132 +10,127 @@ namespace FPNewspaper\PostTypes;
 defined('ABSPATH') || exit;
 
 /**
- * Gestisce il custom post type per gli articoli
+ * Estende il post type nativo 'post' con funzionalità FP Newspaper
+ * 
+ * NOTA: Non crea un CPT separato, usa il 'post' nativo di WordPress
+ * per massima compatibilità con plugin (Yoast SEO, Rank Math, etc.)
  */
 class Article {
     
     /**
-     * Slug del post type
+     * Slug del post type (usa post nativo)
      */
-    const POST_TYPE = 'fp_article';
+    const POST_TYPE = 'post';
     
     /**
-     * Registra il post type
+     * Meta key per identificare articoli gestiti da FP Newspaper (opzionale)
+     */
+    const META_KEY_MANAGED = '_fp_newspaper_managed';
+    
+    /**
+     * Registra estensioni al post type nativo
      */
     public static function register() {
-        add_action('init', [__CLASS__, 'register_post_type']);
-        add_action('init', [__CLASS__, 'register_taxonomies']);
+        add_action('init', [__CLASS__, 'add_post_type_support']);
+        
+        // Tassonomie extra (opzionale - vedi sotto)
+        // add_action('init', [__CLASS__, 'register_extra_taxonomies']);
     }
     
     /**
-     * Registra il custom post type
+     * Aggiungi supporto features ai post nativi
      */
-    public static function register_post_type() {
-        $labels = [
-            'name'                  => _x('Articoli', 'Post type general name', 'fp-newspaper'),
-            'singular_name'         => _x('Articolo', 'Post type singular name', 'fp-newspaper'),
-            'menu_name'             => _x('Articoli', 'Admin Menu text', 'fp-newspaper'),
-            'name_admin_bar'        => _x('Articolo', 'Add New on Toolbar', 'fp-newspaper'),
-            'add_new'               => __('Aggiungi Nuovo', 'fp-newspaper'),
-            'add_new_item'          => __('Aggiungi Nuovo Articolo', 'fp-newspaper'),
-            'new_item'              => __('Nuovo Articolo', 'fp-newspaper'),
-            'edit_item'             => __('Modifica Articolo', 'fp-newspaper'),
-            'view_item'             => __('Visualizza Articolo', 'fp-newspaper'),
-            'all_items'             => __('Tutti gli Articoli', 'fp-newspaper'),
-            'search_items'          => __('Cerca Articoli', 'fp-newspaper'),
-            'parent_item_colon'     => __('Articoli Padre:', 'fp-newspaper'),
-            'not_found'             => __('Nessun articolo trovato.', 'fp-newspaper'),
-            'not_found_in_trash'    => __('Nessun articolo nel cestino.', 'fp-newspaper'),
-            'featured_image'        => _x('Immagine in evidenza', 'Overrides the "Featured Image" phrase', 'fp-newspaper'),
-            'set_featured_image'    => _x('Imposta immagine in evidenza', 'Overrides the "Set featured image" phrase', 'fp-newspaper'),
-            'remove_featured_image' => _x('Rimuovi immagine in evidenza', 'Overrides the "Remove featured image" phrase', 'fp-newspaper'),
-            'use_featured_image'    => _x('Usa come immagine in evidenza', 'Overrides the "Use as featured image" phrase', 'fp-newspaper'),
-            'archives'              => _x('Archivio Articoli', 'The post type archive label', 'fp-newspaper'),
-            'insert_into_item'      => _x('Inserisci nell\'articolo', 'Overrides the "Insert into post"/"Insert into page" phrase', 'fp-newspaper'),
-            'uploaded_to_this_item' => _x('Caricato in questo articolo', 'Overrides the "Uploaded to this post"/"Uploaded to this page" phrase', 'fp-newspaper'),
-            'filter_items_list'     => _x('Filtra lista articoli', 'Screen reader text', 'fp-newspaper'),
-            'items_list_navigation' => _x('Navigazione lista articoli', 'Screen reader text', 'fp-newspaper'),
-            'items_list'            => _x('Lista articoli', 'Screen reader text', 'fp-newspaper'),
-        ];
+    public static function add_post_type_support() {
+        // Post type 'post' ha già supporto per:
+        // - title, editor, author, thumbnail, excerpt, comments, revisions, custom-fields
         
-        $args = [
-            'labels'             => $labels,
-            'public'             => true,
-            'publicly_queryable' => true,
-            'show_ui'            => true,
-            'show_in_menu'       => true,
-            'query_var'          => true,
-            'rewrite'            => ['slug' => 'articoli'],
-            'capability_type'    => 'post',
-            'has_archive'        => true,
-            'hierarchical'       => false,
-            'menu_position'      => 5,
-            'menu_icon'          => 'dashicons-media-document',
-            'supports'           => ['title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions', 'custom-fields'],
-            'show_in_rest'       => true,
-            'rest_base'          => 'articles',
-            'rest_controller_class' => 'WP_REST_Posts_Controller',
-        ];
+        // Aggiungiamo solo se mancano
+        add_post_type_support('post', 'excerpt');
+        add_post_type_support('post', 'custom-fields');
         
-        register_post_type(self::POST_TYPE, $args);
+        // Abilita REST API se non già attivo
+        add_post_type_support('post', 'rest-api');
     }
     
     /**
-     * Registra le tassonomie
+     * Registra tassonomie EXTRA (opzionale)
+     * 
+     * IMPORTANTE: WordPress ha già 'category' e 'post_tag' nativi.
+     * Usa quelli! Registra tassonomie custom SOLO se hai bisogno
+     * di qualcosa in PIÙ (es: "Sezioni Giornale" oltre categorie).
+     * 
+     * Per la maggior parte dei casi, NON serve questo metodo.
      */
-    public static function register_taxonomies() {
-        // Categoria Articolo
-        $category_labels = [
-            'name'              => _x('Categorie', 'taxonomy general name', 'fp-newspaper'),
-            'singular_name'     => _x('Categoria', 'taxonomy singular name', 'fp-newspaper'),
-            'search_items'      => __('Cerca Categorie', 'fp-newspaper'),
-            'all_items'         => __('Tutte le Categorie', 'fp-newspaper'),
-            'parent_item'       => __('Categoria Padre', 'fp-newspaper'),
-            'parent_item_colon' => __('Categoria Padre:', 'fp-newspaper'),
-            'edit_item'         => __('Modifica Categoria', 'fp-newspaper'),
-            'update_item'       => __('Aggiorna Categoria', 'fp-newspaper'),
-            'add_new_item'      => __('Aggiungi Nuova Categoria', 'fp-newspaper'),
-            'new_item_name'     => __('Nome Nuova Categoria', 'fp-newspaper'),
-            'menu_name'         => __('Categorie', 'fp-newspaper'),
-        ];
+    public static function register_extra_taxonomies() {
+        // ESEMPIO: Tassonomia "Sezioni Giornale" (oltre alle categorie normali)
+        // Decommentare se necessario
         
-        register_taxonomy('fp_article_category', [self::POST_TYPE], [
+        /*
+        register_taxonomy('fp_sezione', ['post'], [
             'hierarchical'      => true,
-            'labels'            => $category_labels,
+            'labels'            => [
+                'name'          => __('Sezioni Giornale', 'fp-newspaper'),
+                'singular_name' => __('Sezione', 'fp-newspaper'),
+                'menu_name'     => __('Sezioni', 'fp-newspaper'),
+            ],
             'show_ui'           => true,
             'show_admin_column' => true,
             'query_var'         => true,
-            'rewrite'           => ['slug' => 'categoria-articoli'],
+            'rewrite'           => ['slug' => 'sezione'],
             'show_in_rest'      => true,
         ]);
+        */
+    }
+    
+    /**
+     * Verifica se un post è gestito da FP Newspaper
+     * 
+     * @param int $post_id
+     * @return bool
+     */
+    public static function is_fp_newspaper_post($post_id) {
+        // OPZIONE A: Tutti i post sono gestiti (default)
+        return get_post_type($post_id) === 'post';
         
-        // Tag Articolo
-        $tag_labels = [
-            'name'                       => _x('Tag', 'taxonomy general name', 'fp-newspaper'),
-            'singular_name'              => _x('Tag', 'taxonomy singular name', 'fp-newspaper'),
-            'search_items'               => __('Cerca Tag', 'fp-newspaper'),
-            'popular_items'              => __('Tag Popolari', 'fp-newspaper'),
-            'all_items'                  => __('Tutti i Tag', 'fp-newspaper'),
-            'edit_item'                  => __('Modifica Tag', 'fp-newspaper'),
-            'update_item'                => __('Aggiorna Tag', 'fp-newspaper'),
-            'add_new_item'               => __('Aggiungi Nuovo Tag', 'fp-newspaper'),
-            'new_item_name'              => __('Nome Nuovo Tag', 'fp-newspaper'),
-            'separate_items_with_commas' => __('Separa i tag con virgole', 'fp-newspaper'),
-            'add_or_remove_items'        => __('Aggiungi o rimuovi tag', 'fp-newspaper'),
-            'choose_from_most_used'      => __('Scegli dai tag più usati', 'fp-newspaper'),
-            'not_found'                  => __('Nessun tag trovato.', 'fp-newspaper'),
-            'menu_name'                  => __('Tag', 'fp-newspaper'),
+        // OPZIONE B: Solo post con meta key (decommentare se serve)
+        // return (bool) get_post_meta($post_id, self::META_KEY_MANAGED, true);
+    }
+    
+    /**
+     * Marca un post come gestito da FP Newspaper
+     * 
+     * @param int $post_id
+     */
+    public static function mark_as_managed($post_id) {
+        update_post_meta($post_id, self::META_KEY_MANAGED, '1');
+    }
+    
+    /**
+     * Helper: Ottieni tutti i post FP Newspaper
+     * 
+     * @param array $args Additional WP_Query args
+     * @return WP_Query
+     */
+    public static function get_articles($args = []) {
+        $defaults = [
+            'post_type'      => 'post',
+            'post_status'    => 'publish',
+            'posts_per_page' => 10,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
         ];
         
-        register_taxonomy('fp_article_tag', [self::POST_TYPE], [
-            'hierarchical'      => false,
-            'labels'            => $tag_labels,
-            'show_ui'           => true,
-            'show_admin_column' => true,
-            'query_var'         => true,
-            'rewrite'           => ['slug' => 'tag-articoli'],
-            'show_in_rest'      => true,
-        ]);
+        // Se vuoi solo post "gestiti", aggiungi meta_query
+        // $defaults['meta_query'] = [
+        //     [
+        //         'key'   => self::META_KEY_MANAGED,
+        //         'value' => '1',
+        //     ]
+        // ];
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        return new \WP_Query($args);
     }
 }
 

@@ -1,0 +1,179 @@
+/**
+ * FP Newspaper - Design System
+ * CSS Variables per consistency e theming
+ * 
+ * @package FPNewspaper
+ * @version 1.6.0
+ */
+
+:root {
+    /* ========================================
+       COLORI BRAND
+       ======================================== */
+    --fp-color-primary: #2271b1;
+    --fp-color-primary-dark: #135e96;
+    --fp-color-primary-light: #4a8fc7;
+    --fp-color-primary-lighter: #e5f0f7;
+    
+    /* ========================================
+       COLORI UI
+       ======================================== */
+    --fp-color-bg-light: #f9f9f9;
+    --fp-color-bg-white: #ffffff;
+    --fp-color-bg-gray: #f0f0f1;
+    
+    --fp-color-text: #2c3e50;
+    --fp-color-text-light: #666666;
+    --fp-color-text-muted: #999999;
+    
+    --fp-color-border: #dcdcde;
+    --fp-color-border-light: #eeeeee;
+    
+    /* ========================================
+       COLORI STATO
+       ======================================== */
+    --fp-color-success: #10b981;
+    --fp-color-success-dark: #059669;
+    --fp-color-error: #ef4444;
+    --fp-color-error-dark: #dc2626;
+    --fp-color-warning: #f59e0b;
+    --fp-color-info: #3b82f6;
+    
+    /* ========================================
+       COLORI SOCIAL
+       ======================================== */
+    --fp-color-facebook: #1877f2;
+    --fp-color-facebook-hover: #166fe5;
+    --fp-color-twitter: #000000;
+    --fp-color-twitter-hover: #333333;
+    --fp-color-linkedin: #0077b5;
+    --fp-color-linkedin-hover: #006399;
+    --fp-color-whatsapp: #25d366;
+    --fp-color-whatsapp-hover: #20bd5a;
+    
+    /* ========================================
+       SPACING SYSTEM (8px base)
+       ======================================== */
+    --fp-spacing-xs: 8px;
+    --fp-spacing-sm: 16px;
+    --fp-spacing-md: 24px;
+    --fp-spacing-lg: 32px;
+    --fp-spacing-xl: 40px;
+    --fp-spacing-xxl: 48px;
+    
+    /* ========================================
+       TYPOGRAPHY
+       ======================================== */
+    --fp-font-size-xs: 11px;
+    --fp-font-size-sm: 13px;
+    --fp-font-size-base: 16px;
+    --fp-font-size-lg: 18px;
+    --fp-font-size-xl: 24px;
+    --fp-font-size-xxl: 32px;
+    
+    --fp-font-weight-normal: 400;
+    --fp-font-weight-medium: 500;
+    --fp-font-weight-semibold: 600;
+    --fp-font-weight-bold: 700;
+    
+    --fp-line-height-tight: 1.2;
+    --fp-line-height-normal: 1.4;
+    --fp-line-height-relaxed: 1.6;
+    
+    /* ========================================
+       BORDER RADIUS
+       ======================================== */
+    --fp-radius-sm: 4px;
+    --fp-radius-md: 6px;
+    --fp-radius-lg: 8px;
+    --fp-radius-xl: 12px;
+    --fp-radius-round: 50%;
+    --fp-radius-pill: 999px;
+    
+    /* ========================================
+       SHADOWS
+       ======================================== */
+    --fp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --fp-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --fp-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --fp-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --fp-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.2);
+    
+    /* ========================================
+       TRANSITIONS
+       ======================================== */
+    --fp-transition-fast: 0.15s;
+    --fp-transition-base: 0.2s;
+    --fp-transition-slow: 0.3s;
+    --fp-transition-slower: 0.5s;
+    
+    --fp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --fp-ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --fp-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    
+    /* ========================================
+       Z-INDEX SCALE
+       ======================================== */
+    --fp-z-base: 1;
+    --fp-z-dropdown: 100;
+    --fp-z-sticky: 200;
+    --fp-z-fixed: 300;
+    --fp-z-modal-backdrop: 400;
+    --fp-z-modal: 500;
+    --fp-z-popover: 600;
+    --fp-z-tooltip: 700;
+    
+    /* ========================================
+       BREAKPOINTS (per media queries custom)
+       ======================================== */
+    --fp-screen-sm: 640px;
+    --fp-screen-md: 768px;
+    --fp-screen-lg: 1024px;
+    --fp-screen-xl: 1280px;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Accessibilità - Screen Reader Only */
+.fp-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus Visible (solo tastiera) */
+.fp-focus-visible:focus {
+    outline: 3px solid var(--fp-color-primary);
+    outline-offset: 2px;
+}
+
+.fp-focus-visible:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Smooth Scroll */
+html.fp-smooth-scroll {
+    scroll-behavior: smooth;
+}
+
+/* Reduce Motion (accessibilità) */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+

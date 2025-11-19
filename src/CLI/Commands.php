@@ -37,7 +37,7 @@ class Commands {
     public function stats($args, $assoc_args) {
         global $wpdb;
         
-        $total = wp_count_posts('fp_article');
+        $total = wp_count_posts('post');
         $table_name = $wpdb->prefix . 'fp_newspaper_stats';
         
         \WP_CLI::line('');
@@ -235,7 +235,7 @@ class Commands {
                 'post_content' => 'Contenuto di test per articolo numero ' . $i . '. ' . wp_generate_password(200, false),
                 'post_excerpt' => 'Excerpt articolo test numero ' . $i,
                 'post_status'  => 'publish',
-                'post_type'    => 'fp_article',
+                'post_type'    => 'post',
                 'post_author'  => 1,
             ]);
             
@@ -259,5 +259,10 @@ class Commands {
         \WP_CLI::success(sprintf('Creati %d articoli di test!', $count));
     }
 }
+
+
+
+
+
 
 

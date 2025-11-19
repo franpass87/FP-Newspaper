@@ -1,108 +1,126 @@
 /**
- * FP Newspaper - Frontend Scripts
+ * FP Newspaper - Frontend JavaScript
+ * Animazioni, accessibilità e interazioni frontend
  * 
  * @package FPNewspaper
- * @version 1.0.0
+ * @version 1.6.0
  */
 
 (function($) {
     'use strict';
     
     /**
-     * Inizializza il plugin quando il DOM è pronto
+     * FP Newspaper Frontend App
+     */
+    const FPNewspaper = {
+        
+        /**
+         * Initialize
+         */
+        init() {
+            this.initFadeInAnimations();
+            this.initAccessibility();
+            this.initLazyLoad();
+        },
+        
+        /**
+         * Fade-in animations on scroll (Intersection Observer)
+         */
+        initFadeInAnimations() {
+            // Check browser support
+            if (!('IntersectionObserver' in window)) {
+                // Fallback: mostra subito senza animazione
+                $('.fp-fade-in').addClass('fp-visible');
+                return;
+            }
+            
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fp-visible');
+                        // Unobserve dopo animazione (performance)
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe elementi
+            document.querySelectorAll('.fp-author-box, .fp-related-articles').forEach(function(el) {
+                el.classList.add('fp-fade-in');
+                observer.observe(el);
+            });
+        },
+        
+        /**
+         * Accessibility enhancements
+         */
+        initAccessibility() {
+            // Focus visible solo da tastiera
+            document.body.addEventListener('mousedown', function() {
+                document.body.classList.add('using-mouse');
+            });
+            
+            document.body.addEventListener('keydown', function() {
+                document.body.classList.remove('using-mouse');
+            });
+            
+            // Skip to content link (se non esiste già)
+            if (!$('#fp-skip-to-content').length) {
+                $('<a id="fp-skip-to-content" href="#content" class="fp-sr-only fp-focus-visible">Skip to content</a>')
+                    .prependTo('body')
+                    .on('click', function(e) {
+                        e.preventDefault();
+                        $('#content, main, [role="main"]').first().focus();
+                    });
+            }
+        },
+        
+        /**
+         * Lazy load images (se supportato)
+         */
+        initLazyLoad() {
+            if ('loading' in HTMLImageElement.prototype) {
+                // Browser supporta lazy loading nativo
+                $('.fp-related-thumb img').attr('loading', 'lazy');
+            } else {
+                // Fallback con Intersection Observer
+                if ('IntersectionObserver' in window) {
+                    const lazyImages = document.querySelectorAll('.fp-related-thumb img');
+                    
+                    const imageObserver = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                if (img.dataset.src) {
+                                    img.src = img.dataset.src;
+                                    img.removeAttribute('data-src');
+                                }
+                                imageObserver.unobserve(img);
+                            }
+                        });
+                    });
+                    
+                    lazyImages.forEach(function(img) {
+                        imageObserver.observe(img);
+                    });
+                }
+            }
+        }
+    };
+    
+    /**
+     * Initialize on document ready
      */
     $(document).ready(function() {
         FPNewspaper.init();
     });
     
-    /**
-     * Oggetto principale per gestione frontend
-     */
-    const FPNewspaper = {
-        
-        /**
-         * Inizializzazione
-         */
-        init: function() {
-            this.trackViews();
-            this.handleSharing();
-            this.handleReadMore();
-        },
-        
-        /**
-         * Traccia visualizzazioni articoli
-         */
-        trackViews: function() {
-            // Solo su articoli singoli
-            if (!$('body').hasClass('single-fp_article')) {
-                return;
-            }
-            
-            const postId = $('article.fp_article').data('post-id');
-            
-            if (postId) {
-                $.ajax({
-                    url: '/wp-json/fp-newspaper/v1/articles/' + postId + '/view',
-                    method: 'POST',
-                    success: function(response) {
-                        console.log('View tracked successfully');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error tracking view:', error);
-                    }
-                });
-            }
-        },
-        
-        /**
-         * Gestisce condivisione social
-         */
-        handleSharing: function() {
-            $('.fp-share-button').on('click', function(e) {
-                e.preventDefault();
-                
-                const url = $(this).data('url');
-                const network = $(this).data('network');
-                
-                let shareUrl = '';
-                
-                switch(network) {
-                    case 'facebook':
-                        shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
-                        break;
-                    case 'twitter':
-                        shareUrl = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(url);
-                        break;
-                    case 'linkedin':
-                        shareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
-                        break;
-                    case 'whatsapp':
-                        shareUrl = 'https://wa.me/?text=' + encodeURIComponent(url);
-                        break;
-                }
-                
-                if (shareUrl) {
-                    window.open(shareUrl, 'share-dialog', 'width=600,height=400');
-                }
-            });
-        },
-        
-        /**
-         * Gestisce pulsanti "Leggi di più"
-         */
-        handleReadMore: function() {
-            $('.fp-article-read-more').on('click', function(e) {
-                // Animazione smooth scroll se necessario
-                const href = $(this).attr('href');
-                if (href.indexOf('#') === 0) {
-                    e.preventDefault();
-                    $('html, body').animate({
-                        scrollTop: $(href).offset().top - 100
-                    }, 500);
-                }
-            });
-        }
-    };
+    // Expose to global scope (per debug/estensioni)
+    window.FPNewspaper = FPNewspaper;
     
 })(jQuery);
-

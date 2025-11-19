@@ -7,6 +7,10 @@
 
 namespace FPNewspaper\REST;
 
+use FPNewspaper\Logger;
+use FPNewspaper\Security\RateLimiter;
+use FPNewspaper\Cache\Manager as CacheManager;
+
 defined('ABSPATH') || exit;
 
 /**
@@ -101,7 +105,7 @@ class Controller {
         }
         
         // Check 2: Post type registered
-        $pt_exists = post_type_exists('fp_article');
+        $pt_exists = post_type_exists('post');
         $health['checks']['post_type'] = [
             'status' => $pt_exists ? 'ok' : 'error',
             'message' => $pt_exists ? 'Post type registered' : 'Post type missing'
@@ -156,6 +160,7 @@ class Controller {
         
         // Usa transient per cache (5 minuti)
         $cache_key = 'fp_newspaper_stats_cache';
+        $cache_duration = apply_filters('fp_newspaper_stats_cache_duration', 300);
         $cached_stats = get_transient($cache_key);
         
         if (false !== $cached_stats) {
@@ -163,7 +168,7 @@ class Controller {
         }
         
         $stats = [
-            'total_articles' => wp_count_posts('fp_article')->publish,
+            'total_articles' => wp_count_posts('post')->publish,
             'total_views'    => 0,
             'total_shares'   => 0,
         ];
@@ -192,8 +197,8 @@ class Controller {
             }
         }
         
-        // Cache per 5 minuti
-        set_transient($cache_key, $stats, 5 * MINUTE_IN_SECONDS);
+        // Cache con durata filtrabile
+        set_transient($cache_key, $stats, $cache_duration);
         
         return new \WP_REST_Response($stats, 200);
     }
@@ -207,28 +212,43 @@ class Controller {
     public function increment_views($request) {
         global $wpdb;
         
-        $post_id = absint($request['id']); // Sanitizzato doppiamente
+        $post_id = absint($request['id']);
         
         // Verifica che il post esista E sia del tipo corretto
         $post = get_post($post_id);
-        if (!$post || 'fp_article' !== $post->post_type || 'publish' !== $post->post_status) {
+        if (!$post || 'post' !== $post->post_type || 'publish' !== $post->post_status) {
+            Logger::warning('View increment failed: invalid post', ['post_id' => $post_id]);
             return new \WP_REST_Response([
                 'error' => __('Articolo non trovato', 'fp-newspaper')
             ], 404);
         }
         
-        // Rate limiting semplice: max 1 view ogni 30 secondi per IP+post_id
-        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
-        $rate_limit_key = 'fp_view_' . md5($ip_address . $post_id);
-        
-        if (false !== get_transient($rate_limit_key)) {
-            // View già registrata recentemente, ignora silenziosamente
-            return new \WP_REST_Response([
-                'success' => true,
-                'message' => __('Visualizzazione già registrata', 'fp-newspaper'),
-                'cached' => true
-            ], 200);
+        // Rate limiting avanzato con protezione DDoS
+        if (class_exists('FPNewspaper\Security\RateLimiter')) {
+            if (!RateLimiter::is_allowed('view', $post_id)) {
+                Logger::debug('View blocked by rate limiter', ['post_id' => $post_id]);
+                return new \WP_REST_Response([
+                    'success' => true,
+                    'message' => __('Visualizzazione già registrata', 'fp-newspaper'),
+                    'cached' => true
+                ], 200);
+            }
+        } else {
+            // Fallback legacy rate limiting
+            $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+            $rate_limit_key = 'fp_view_' . md5($ip_address . $post_id);
+            
+            if (false !== get_transient($rate_limit_key)) {
+                return new \WP_REST_Response([
+                    'success' => true,
+                    'message' => __('Visualizzazione già registrata', 'fp-newspaper'),
+                    'cached' => true
+                ], 200);
+            }
         }
+        
+        // Performance tracking
+        $start = microtime(true);
         
         $table_name = $wpdb->prefix . 'fp_newspaper_stats';
         
@@ -240,14 +260,14 @@ class Controller {
         ));
         
         if ($lock != 1) {
-            // Non riuscito ad ottenere il lock, prova più tardi
+            Logger::warning('Failed to acquire lock for view increment', ['post_id' => $post_id]);
             return new \WP_REST_Response([
                 'success' => false,
                 'error' => __('Servizio momentaneamente non disponibile', 'fp-newspaper')
             ], 503);
         }
         
-        // Inserisce o aggiorna il contatore con prepared statement sicuro
+        // Inserisce o aggiorna il contatore
         $result = $wpdb->query($wpdb->prepare(
             "INSERT INTO `{$wpdb->prefix}fp_newspaper_stats` (post_id, views) 
              VALUES (%d, 1) 
@@ -258,15 +278,26 @@ class Controller {
         // Rilascia il lock
         $wpdb->query($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
         
-        // Invalida cache statistiche
-        delete_transient('fp_newspaper_stats_cache');
+        // Track performance
+        $duration = (microtime(true) - $start) * 1000;
+        if (class_exists('FPNewspaper\Logger')) {
+            Logger::performance('increment_views', $duration, ['post_id' => $post_id]);
+        }
         
-        // Verifica se la query è andata a buon fine
+        // Invalida cache
+        if (class_exists('FPNewspaper\Cache\Manager')) {
+            CacheManager::invalidate_stats();
+            CacheManager::invalidate_article($post_id);
+        } else {
+            delete_transient('fp_newspaper_stats_cache');
+        }
+        
+        // Verifica risultato
         if ($result === false) {
-            // NON esporre db_error in produzione - solo log
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('FP Newspaper: Errore increment_views - ' . $wpdb->last_error);
-            }
+            Logger::error('View increment query failed', [
+                'post_id' => $post_id,
+                'error' => $wpdb->last_error,
+            ]);
             
             return new \WP_REST_Response([
                 'success' => false,
@@ -274,8 +305,19 @@ class Controller {
             ], 500);
         }
         
-        // Imposta transient per rate limiting
-        set_transient($rate_limit_key, true, 30);
+        // Marca rate limit
+        if (class_exists('FPNewspaper\Security\RateLimiter')) {
+            RateLimiter::mark_used('view', $post_id);
+        } else {
+            // Fallback legacy
+            $rate_duration = apply_filters('fp_newspaper_rate_limit_duration', 30);
+            $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+            $rate_limit_key = 'fp_view_' . md5($ip_address . $post_id);
+            set_transient($rate_limit_key, true, $rate_duration);
+        }
+        
+        // Fire action hook
+        do_action('fp_newspaper_view_incremented', $post_id, $result);
         
         return new \WP_REST_Response([
             'success' => true,
@@ -290,8 +332,9 @@ class Controller {
      * @return \WP_REST_Response
      */
     public function get_featured_articles($request) {
-        // Cache per 10 minuti
+        // Cache con durata configurabile
         $cache_key = 'fp_featured_articles_cache';
+        $cache_duration = apply_filters('fp_newspaper_featured_cache_duration', 600); // Default 10 min
         $cached_articles = get_transient($cache_key);
         
         if (false !== $cached_articles) {
@@ -302,7 +345,7 @@ class Controller {
         $per_page = isset($request['per_page']) ? min(absint($request['per_page']), 20) : 5;
         
         $args = [
-            'post_type'              => 'fp_article',
+            'post_type'              => 'post',
             'posts_per_page'         => $per_page,
             'post_status'            => 'publish',
             'no_found_rows'          => true,  // Performance: non conta righe totali
@@ -347,8 +390,8 @@ class Controller {
             wp_reset_postdata();
         }
         
-        // Cache per 10 minuti
-        set_transient($cache_key, $articles, 10 * MINUTE_IN_SECONDS);
+        // Cache con durata configurabile
+        set_transient($cache_key, $articles, $cache_duration);
         
         return new \WP_REST_Response($articles, 200);
     }

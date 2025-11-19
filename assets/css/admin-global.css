@@ -1,0 +1,45 @@
+/**
+ * FP Newspaper - Admin Global Styles
+ * Stili globali admin (meta boxes, UI components)
+ * 
+ * @package FPNewspaper
+ * @version 1.6.0
+ */
+
+/* Meta boxes migliorati */
+.fp-meta-box {
+    padding: 12px;
+}
+
+.fp-meta-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.fp-meta-box input[type="text"],
+.fp-meta-box textarea,
+.fp-meta-box select {
+    width: 100%;
+}
+
+/* Success/Error messages */
+.fp-notice {
+    padding: 12px;
+    margin: 16px 0;
+    border-left: 4px solid #2271b1;
+    background: #f0f6fc;
+    border-radius: 4px;
+}
+
+.fp-notice.success {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.fp-notice.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+

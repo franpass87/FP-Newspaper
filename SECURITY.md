@@ -251,3 +251,8 @@ This security policy applies to FP Newspaper plugin licensed under GPL v2 or lat
 *This document is maintained by Francesco Passeri and should be reviewed regularly for accuracy and completeness.*
 
 
+
+
+
+
+

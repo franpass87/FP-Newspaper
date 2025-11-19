@@ -70,13 +70,16 @@ class Plugin {
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         
-        // Azioni frontend
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
+        // NOTA: Frontend enqueue ora gestito da Assets.php (v1.6.0)
         
         // Cache invalidation quando articoli cambiano
-        add_action('save_post_fp_article', [$this, 'invalidate_caches'], 10, 3);
-        add_action('delete_post', [$this, 'invalidate_caches_on_delete']);
+        add_action('save_post_post', [$this, 'schedule_cache_invalidation'], 10, 3);
+        add_action('fp_newspaper_async_invalidate', [$this, 'process_cache_invalidation']);
+        add_action('delete_post', [$this, 'invalidate_caches_on_delete'], 10, 1);
         add_action('update_post_meta', [$this, 'invalidate_caches_on_meta_update'], 10, 4);
+        
+        // Abilita paged query var per supporto paginazione su page
+        add_filter('query_vars', [$this, 'add_paged_query_var']);
         
         // Inizializza componenti
         $this->init_components();
@@ -116,9 +119,99 @@ class Plugin {
             new Admin\Settings();
         }
         
+        // Inizializza export/import
+        if (class_exists('FPNewspaper\ExportImport')) {
+            new ExportImport();
+        }
+        
+        // Inizializza notifications
+        if (class_exists('FPNewspaper\Notifications')) {
+            new Notifications();
+        }
+        
+        // Inizializza analytics
+        if (class_exists('FPNewspaper\Analytics')) {
+            new Analytics();
+        }
+        
+        // Inizializza comments
+        if (class_exists('FPNewspaper\Comments')) {
+            new Comments();
+        }
+        
         // Inizializza WP-CLI commands
         if (class_exists('FPNewspaper\CLI\Commands')) {
             CLI\Commands::register();
+        }
+        
+        // Inizializza workflow manager
+        if (class_exists('FPNewspaper\Workflow\WorkflowManager')) {
+            new Workflow\WorkflowManager();
+        }
+        
+        // Inizializza note interne
+        if (class_exists('FPNewspaper\Workflow\InternalNotes')) {
+            new Workflow\InternalNotes();
+        }
+        
+        // Inizializza calendario editoriale
+        if (class_exists('FPNewspaper\Editorial\Calendar')) {
+            new Editorial\Calendar();
+        }
+        
+        // Inizializza workflow admin page
+        if (class_exists('FPNewspaper\Admin\WorkflowPage')) {
+            new Admin\WorkflowPage();
+        }
+        
+        // Inizializza calendar admin page
+        if (class_exists('FPNewspaper\Admin\CalendarPage')) {
+            new Admin\CalendarPage();
+        }
+        
+        // Inizializza editorial dashboard
+        if (class_exists('FPNewspaper\Editorial\Dashboard')) {
+            new Editorial\Dashboard();
+        }
+        
+        // Inizializza editorial dashboard page
+        if (class_exists('FPNewspaper\Admin\EditorialDashboardPage')) {
+            new Admin\EditorialDashboardPage();
+        }
+        
+        // Inizializza editorial widgets
+        if (class_exists('FPNewspaper\Widgets\EditorialWidgets')) {
+            new Widgets\EditorialWidgets();
+        }
+        
+        // Inizializza story formats
+        if (class_exists('FPNewspaper\Templates\StoryFormats')) {
+            new Templates\StoryFormats();
+        }
+        
+        // Inizializza author manager
+        if (class_exists('FPNewspaper\Authors\AuthorManager')) {
+            new Authors\AuthorManager();
+        }
+        
+        // Inizializza desks
+        if (class_exists('FPNewspaper\Editorial\Desks')) {
+            new Editorial\Desks();
+        }
+        
+        // Inizializza related articles
+        if (class_exists('FPNewspaper\Related\RelatedArticles')) {
+            new Related\RelatedArticles();
+        }
+        
+        // Inizializza media credits
+        if (class_exists('FPNewspaper\Media\CreditsManager')) {
+            new Media\CreditsManager();
+        }
+        
+        // Inizializza assets manager (CSS/JS)
+        if (class_exists('FPNewspaper\Assets')) {
+            new Assets();
         }
         
         // Inizializza shortcodes
@@ -165,7 +258,7 @@ class Plugin {
         global $wpdb;
         
         // Statistiche
-        $total_articles = wp_count_posts('fp_article');
+        $total_articles = wp_count_posts('post');
         if (!$total_articles) {
             $total_articles = (object) ['publish' => 0, 'draft' => 0];
         }
@@ -196,7 +289,7 @@ class Plugin {
         
         // Articoli recenti
         $recent_articles = get_posts([
-            'post_type' => 'fp_article',
+            'post_type' => 'post',
             'posts_per_page' => 5,
             'post_status' => 'publish',
             'orderby' => 'date',
@@ -206,13 +299,18 @@ class Plugin {
         // Articoli più visti
         $most_viewed = [];
         if ($table_exists) {
+            // Query sicura con prepared statement
             $most_viewed_results = $wpdb->get_results(
-                "SELECT p.ID, p.post_title, s.views 
-                FROM {$wpdb->posts} p
-                INNER JOIN $table_name s ON p.ID = s.post_id
-                WHERE p.post_type = 'fp_article' AND p.post_status = 'publish'
-                ORDER BY s.views DESC
-                LIMIT 5"
+                $wpdb->prepare(
+                    "SELECT p.ID, p.post_title, s.views 
+                    FROM {$wpdb->posts} p
+                    INNER JOIN $table_name s ON p.ID = s.post_id
+                    WHERE p.post_type = %s AND p.post_status = %s
+                    ORDER BY s.views DESC
+                    LIMIT 5",
+                    'post',
+                    'publish'
+                )
             );
             if ($most_viewed_results && !is_wp_error($most_viewed_results)) {
                 $most_viewed = $most_viewed_results;
@@ -221,7 +319,7 @@ class Plugin {
         
         // Breaking News
         $breaking_news = get_posts([
-            'post_type' => 'fp_article',
+            'post_type' => 'post',
             'posts_per_page' => 5,
             'meta_key' => '_fp_breaking_news',
             'meta_value' => '1',
@@ -230,7 +328,7 @@ class Plugin {
         
         // Articoli in evidenza
         $featured_articles = get_posts([
-            'post_type' => 'fp_article',
+            'post_type' => 'post',
             'posts_per_page' => 5,
             'meta_key' => '_fp_featured',
             'meta_value' => '1',
@@ -239,7 +337,13 @@ class Plugin {
         
         ?>
         <div class="wrap fp-newspaper-dashboard">
-            <h1><?php echo esc_html__('FP Newspaper - Dashboard', 'fp-newspaper'); ?></h1>
+            <h1><?php echo esc_html__('Dashboard', 'fp-newspaper'); ?></h1>
+            
+            <!-- Welcome Message -->
+            <div class="fp-welcome-message">
+                <h2><?php echo esc_html__('Benvenuto nel Dashboard FP Newspaper', 'fp-newspaper'); ?></h2>
+                <p><?php echo esc_html__('Gestisci tutti i tuoi articoli, statistiche e impostazioni da un unico punto di controllo.', 'fp-newspaper'); ?></p>
+            </div>
             
             <!-- Statistiche principali -->
             <div class="fp-stats-grid">
@@ -280,19 +384,19 @@ class Plugin {
             <div class="fp-quick-actions">
                 <h2><?php _e('Azioni Rapide', 'fp-newspaper'); ?></h2>
                 <div class="fp-actions-grid">
-                    <a href="<?php echo admin_url('post-new.php?post_type=fp_article'); ?>" class="fp-action-btn fp-action-primary">
+                    <a href="<?php echo admin_url('post-new.php'); ?>" class="fp-action-btn fp-action-primary">
                         <span class="dashicons dashicons-plus-alt"></span>
                         <?php _e('Nuovo Articolo', 'fp-newspaper'); ?>
                     </a>
-                    <a href="<?php echo admin_url('edit.php?post_type=fp_article'); ?>" class="fp-action-btn">
+                    <a href="<?php echo admin_url('edit.php'); ?>" class="fp-action-btn">
                         <span class="dashicons dashicons-list-view"></span>
                         <?php _e('Tutti gli Articoli', 'fp-newspaper'); ?>
                     </a>
-                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=fp_article_category&post_type=fp_article'); ?>" class="fp-action-btn">
+                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=category'); ?>" class="fp-action-btn">
                         <span class="dashicons dashicons-category"></span>
                         <?php _e('Categorie', 'fp-newspaper'); ?>
                     </a>
-                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=fp_article_tag&post_type=fp_article'); ?>" class="fp-action-btn">
+                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=post_tag'); ?>" class="fp-action-btn">
                         <span class="dashicons dashicons-tag"></span>
                         <?php _e('Tag', 'fp-newspaper'); ?>
                     </a>
@@ -321,14 +425,14 @@ class Plugin {
                                 <?php endforeach; ?>
                             </ul>
                             <p class="fp-view-all">
-                                <a href="<?php echo admin_url('edit.php?post_type=fp_article'); ?>">
+                                <a href="<?php echo admin_url('edit.php'); ?>">
                                     <?php _e('Vedi tutti gli articoli →', 'fp-newspaper'); ?>
                                 </a>
                             </p>
                         <?php else: ?>
                             <p class="fp-empty-state">
                                 <?php _e('Nessun articolo pubblicato.', 'fp-newspaper'); ?>
-                                <a href="<?php echo admin_url('post-new.php?post_type=fp_article'); ?>">
+                                <a href="<?php echo admin_url('post-new.php'); ?>">
                                     <?php _e('Crea il primo articolo', 'fp-newspaper'); ?>
                                 </a>
                             </p>
@@ -411,7 +515,7 @@ class Plugin {
                                 <td><strong><?php _e('Categorie:', 'fp-newspaper'); ?></strong></td>
                                 <td>
                                     <?php 
-                                    $cat_count = wp_count_terms(['taxonomy' => 'fp_article_category']);
+                                    $cat_count = wp_count_terms(['taxonomy' => 'category']);
                                     echo is_wp_error($cat_count) ? 0 : $cat_count;
                                     ?>
                                 </td>
@@ -420,7 +524,7 @@ class Plugin {
                                 <td><strong><?php _e('Tag:', 'fp-newspaper'); ?></strong></td>
                                 <td>
                                     <?php 
-                                    $tag_count = wp_count_terms(['taxonomy' => 'fp_article_tag']);
+                                    $tag_count = wp_count_terms(['taxonomy' => 'post_tag']);
                                     echo is_wp_error($tag_count) ? 0 : $tag_count;
                                     ?>
                                 </td>
@@ -766,44 +870,52 @@ class Plugin {
      * Carica asset admin
      */
     public function enqueue_admin_assets($hook) {
-        if (strpos($hook, 'fp-newspaper') === false) {
-            return;
+        // Carica sempre su post edit/new per supporto mappa
+        $is_post_edit = in_array($hook, ['post.php', 'post-new.php']);
+        
+        if ($is_post_edit || strpos($hook, 'fp-newspaper') !== false) {
+            wp_enqueue_style(
+                'fp-newspaper-admin',
+                FP_NEWSPAPER_URL . 'assets/css/admin.css',
+                [],
+                FP_NEWSPAPER_VERSION
+            );
+            
+            // Leaflet CSS per mappa
+            wp_enqueue_style(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+                [],
+                '1.9.4'
+            );
+            
+            wp_enqueue_script(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                [],
+                '1.9.4',
+                true
+            );
+            
+            wp_enqueue_script(
+                'fp-newspaper-admin',
+                FP_NEWSPAPER_URL . 'assets/js/admin.js',
+                ['jquery', 'leaflet'],
+                FP_NEWSPAPER_VERSION,
+                true
+            );
         }
-        
-        wp_enqueue_style(
-            'fp-newspaper-admin',
-            FP_NEWSPAPER_URL . 'assets/css/admin.css',
-            [],
-            FP_NEWSPAPER_VERSION
-        );
-        
-        wp_enqueue_script(
-            'fp-newspaper-admin',
-            FP_NEWSPAPER_URL . 'assets/js/admin.js',
-            ['jquery'],
-            FP_NEWSPAPER_VERSION,
-            true
-        );
     }
     
     /**
-     * Carica asset frontend
+     * Enqueue frontend assets
+     * DEPRECATO v1.6.0: Ora gestito da src/Assets.php
+     * Mantenuto vuoto per retrocompatibilità
      */
     public function enqueue_frontend_assets() {
-        wp_enqueue_style(
-            'fp-newspaper-frontend',
-            FP_NEWSPAPER_URL . 'assets/css/frontend.css',
-            [],
-            FP_NEWSPAPER_VERSION
-        );
-        
-        wp_enqueue_script(
-            'fp-newspaper-frontend',
-            FP_NEWSPAPER_URL . 'assets/js/frontend.js',
-            ['jquery'],
-            FP_NEWSPAPER_VERSION,
-            true
-        );
+        // NOTA: Enqueue spostato in src/Assets.php (v1.6.0)
+        // Metodo mantenuto vuoto per evitare errori se chiamato da temi/plugin esterni
+        return;
     }
     
     /**
@@ -813,19 +925,45 @@ class Plugin {
      * @param \WP_Post $post
      * @param bool $update
      */
-    public function invalidate_caches($post_id, $post, $update) {
-        // Solo per articoli pubblicati
+    public function schedule_cache_invalidation($post_id, $post, $update) {
         if ('publish' !== $post->post_status) {
             return;
         }
-        
-        delete_transient('fp_newspaper_stats_cache');
-        delete_transient('fp_featured_articles_cache');
-        
-        // Log in debug mode
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("FP Newspaper: Cache invalidata per post ID $post_id");
+
+        static $scheduled_posts = [];
+        if (isset($scheduled_posts[$post_id])) {
+            return;
         }
+
+        $scheduled_posts[$post_id] = true;
+
+        if (!wp_next_scheduled('fp_newspaper_async_invalidate', [$post_id])) {
+            wp_schedule_single_event(time() + 5, 'fp_newspaper_async_invalidate', [$post_id]);
+        }
+    }
+
+    /**
+     * Esegue l'invalidazione della cache per gli articoli in maniera asincrona.
+     *
+     * @param int $post_id
+     * @return void
+     */
+    public function process_cache_invalidation($post_id) {
+        $post = get_post($post_id);
+        if (!$post || 'publish' !== $post->post_status) {
+            return;
+        }
+
+        if (class_exists('FPNewspaper\Cache\Manager')) {
+            Cache\Manager::invalidate_article($post_id);
+            Cache\Manager::invalidate_lists();
+            Cache\Manager::invalidate_stats();
+        } else {
+            delete_transient('fp_newspaper_stats_cache');
+            delete_transient('fp_featured_articles_cache');
+        }
+
+        Logger::debug("Async cache invalidated for article", ['post_id' => $post_id]);
     }
     
     /**
@@ -834,9 +972,18 @@ class Plugin {
      * @param int $post_id
      */
     public function invalidate_caches_on_delete($post_id) {
-        if ('fp_article' === get_post_type($post_id)) {
-            delete_transient('fp_newspaper_stats_cache');
-            delete_transient('fp_featured_articles_cache');
+        if ('post' === get_post_type($post_id)) {
+            // Usa nuovo Cache Manager
+            if (class_exists('FPNewspaper\Cache\Manager')) {
+                Cache\Manager::invalidate_article($post_id);
+                Cache\Manager::invalidate_stats();
+            } else {
+                // Fallback legacy
+                delete_transient('fp_newspaper_stats_cache');
+                delete_transient('fp_featured_articles_cache');
+            }
+            
+            Logger::info("Article deleted, cache invalidated", ['post_id' => $post_id]);
         }
     }
     
@@ -849,13 +996,36 @@ class Plugin {
      * @param mixed $meta_value
      */
     public function invalidate_caches_on_meta_update($meta_id, $post_id, $meta_key, $meta_value) {
-        if ('_fp_featured' === $meta_key && 'fp_article' === get_post_type($post_id)) {
-            delete_transient('fp_featured_articles_cache');
+        if (in_array($meta_key, ['_fp_featured', '_fp_breaking_news'], true) && 'post' === get_post_type($post_id)) {
+            // Usa nuovo Cache Manager
+            if (class_exists('FPNewspaper\Cache\Manager')) {
+                Cache\Manager::invalidate_lists();
+            } else {
+                // Fallback legacy
+                delete_transient('fp_featured_articles_cache');
+            }
+            
+            Logger::debug("Meta updated, lists cache invalidated", [
+                'post_id' => $post_id,
+                'meta_key' => $meta_key,
+            ]);
         }
-        
-        if ('_fp_breaking_news' === $meta_key && 'fp_article' === get_post_type($post_id)) {
-            delete_transient('fp_featured_articles_cache');
+    }
+    
+    /**
+     * Aggiunge paged query var per supporto paginazione su page
+     *
+     * @param array $vars
+     * @return array
+     */
+    public function add_paged_query_var($vars) {
+        if (!in_array('paged', $vars, true)) {
+            $vars[] = 'paged';
         }
+        if (!in_array('page', $vars, true)) {
+            $vars[] = 'page';
+        }
+        return $vars;
     }
 }
 

@@ -19,8 +19,8 @@ class BulkActions {
      */
     public function __construct() {
         // Aggiungi bulk actions
-        add_filter('bulk_actions-edit-fp_article', [$this, 'add_bulk_actions']);
-        add_filter('handle_bulk_actions-edit-fp_article', [$this, 'handle_bulk_actions'], 10, 3);
+        add_filter('bulk_actions-edit-post', [$this, 'add_bulk_actions']);
+        add_filter('handle_bulk_actions-edit-post', [$this, 'handle_bulk_actions'], 10, 3);
         add_action('admin_notices', [$this, 'bulk_action_notices']);
     }
     
@@ -114,7 +114,7 @@ class BulkActions {
      * Mostra notice dopo bulk actions
      */
     public function bulk_action_notices() {
-        if (!isset($_REQUEST['post_type']) || 'fp_article' !== $_REQUEST['post_type']) {
+        if (!isset($_REQUEST['post_type']) || 'post' !== $_REQUEST['post_type']) {
             return;
         }
         
@@ -191,5 +191,10 @@ class BulkActions {
         }
     }
 }
+
+
+
+
+
 
 

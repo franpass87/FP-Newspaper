@@ -283,3 +283,8 @@ curl -u admin:password https://sito.com/wp-json/fp-newspaper/v1/health
 Per documentazione completa, vedi [README-DEV.md](https://github.com/franpass87/FP-Newspaper/blob/main/README-DEV.md)
 
 
+
+
+
+
+

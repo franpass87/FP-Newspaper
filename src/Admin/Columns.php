@@ -19,9 +19,9 @@ class Columns {
      */
     public function __construct() {
         // Colonne lista articoli
-        add_filter('manage_fp_article_posts_columns', [$this, 'add_columns']);
-        add_action('manage_fp_article_posts_custom_column', [$this, 'render_column'], 10, 2);
-        add_filter('manage_edit-fp_article_sortable_columns', [$this, 'sortable_columns']);
+        add_filter('manage_post_posts_columns', [$this, 'add_columns']);
+        add_action('manage_post_posts_custom_column', [$this, 'render_column'], 10, 2);
+        add_filter('manage_edit-post_sortable_columns', [$this, 'sortable_columns']);
         
         // Ordinamento
         add_action('pre_get_posts', [$this, 'handle_sorting']);
@@ -46,6 +46,7 @@ class Columns {
         $columns['thumbnail'] = __('Immagine', 'fp-newspaper');
         $columns['fp_featured'] = '<span class="dashicons dashicons-star-filled" title="' . esc_attr__('In Evidenza', 'fp-newspaper') . '"></span>';
         $columns['fp_breaking'] = '<span class="dashicons dashicons-megaphone" title="' . esc_attr__('Breaking News', 'fp-newspaper') . '"></span>';
+        $columns['fp_location'] = '<span class="dashicons dashicons-location" title="' . esc_attr__('Localizzazione', 'fp-newspaper') . '"></span>';
         $columns['fp_views'] = __('Visualizzazioni', 'fp-newspaper');
         $columns['fp_categories'] = __('Categorie', 'fp-newspaper');
         $columns['date'] = $date; // Rimetti data alla fine
@@ -87,6 +88,21 @@ class Columns {
                 }
                 break;
                 
+            case 'fp_location':
+                $address = get_post_meta($post_id, '_fp_article_address', true);
+                $show_on_map = get_post_meta($post_id, '_fp_show_on_map', true);
+                
+                if ($show_on_map === '1' && !empty($address)) {
+                    echo '<span class="dashicons dashicons-location" style="color: #00a32a; font-size: 18px;" title="' . esc_attr($address) . '"></span>';
+                    echo '<br><small style="color: #646970; font-size: 11px; max-width: 100px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' . esc_html($address) . '</small>';
+                } elseif (!empty($address)) {
+                    echo '<span class="dashicons dashicons-location" style="color: #646970; font-size: 18px;" title="' . esc_attr($address) . '"></span>';
+                    echo '<br><small style="color: #646970; font-size: 11px; opacity: 0.6;">' . esc_html__('Non in mappa', 'fp-newspaper') . '</small>';
+                } else {
+                    echo '<span style="opacity: 0.2;">—</span>';
+                }
+                break;
+                
             case 'fp_views':
                 global $wpdb;
                 $table_name = $wpdb->prefix . 'fp_newspaper_stats';
@@ -105,13 +121,13 @@ class Columns {
                 break;
                 
             case 'fp_categories':
-                $terms = get_the_terms($post_id, 'fp_article_category');
+                $terms = get_the_terms($post_id, 'category');
                 if ($terms && !is_wp_error($terms)) {
                     $output = [];
                     foreach ($terms as $term) {
                         $output[] = sprintf(
                             '<a href="%s">%s</a>',
-                            esc_url(add_query_arg(['fp_article_category' => $term->slug], 'edit.php?post_type=fp_article')),
+                            esc_url(add_query_arg(['category_name' => $term->slug], 'edit.php')),
                             esc_html($term->name)
                         );
                     }
@@ -147,7 +163,7 @@ class Columns {
             return;
         }
         
-        if ('fp_article' !== $query->get('post_type')) {
+        if ('post' !== $query->get('post_type')) {
             return;
         }
         
@@ -177,7 +193,7 @@ class Columns {
      * @param string $post_type
      */
     public function add_filters($post_type) {
-        if ('fp_article' !== $post_type) {
+        if ('post' !== $post_type) {
             return;
         }
         
@@ -210,7 +226,7 @@ class Columns {
     public function filter_query($query) {
         global $pagenow, $typenow;
         
-        if ('edit.php' !== $pagenow || 'fp_article' !== $typenow) {
+        if ('edit.php' !== $pagenow || 'post' !== $typenow) {
             return;
         }
         
@@ -239,5 +255,10 @@ class Columns {
         }
     }
 }
+
+
+
+
+
 
 

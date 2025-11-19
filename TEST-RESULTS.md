@@ -199,3 +199,8 @@ Il plugin **FP Newspaper v1.0.0** ha superato tutti i test di:
 **Result:** ✅ **ALL PASS**
 
 
+
+
+
+
+

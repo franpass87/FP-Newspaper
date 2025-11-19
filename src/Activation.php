@@ -48,8 +48,13 @@ class Activation {
         
         // Registra post types e tassonomie (necessario prima di flush_rewrite_rules)
         if (class_exists('FPNewspaper\PostTypes\Article')) {
-            PostTypes\Article::register_post_type();
-            PostTypes\Article::register_taxonomies();
+            PostTypes\Article::register();
+        }
+        
+        // Registra ruoli editoriali custom
+        if (class_exists('FPNewspaper\Workflow\Roles')) {
+            Workflow\Roles::register_roles();
+            Workflow\Roles::add_admin_capabilities();
         }
         
         // Crea pagine predefinite
@@ -77,6 +82,10 @@ class Activation {
             $site_id = is_multisite() ? get_current_blog_id() : 0;
             error_log("FP Newspaper: Plugin attivato con successo (Site ID: $site_id)");
         }
+        
+        // Fire action hook
+        $site_id = is_multisite() ? get_current_blog_id() : 0;
+        do_action('fp_newspaper_after_activation', $site_id);
     }
     
     /**

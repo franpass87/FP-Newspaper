@@ -3,7 +3,7 @@
  * Plugin Name: FP Newspaper
  * Plugin URI: https://francescopasseri.com
  * Description: Plugin per gestione contenuti editoriali e pubblicazione di articoli in stile giornalistico
- * Version: 1.0.0
+ * Version: 1.6.0
  * Author: Francesco Passeri
  * Author URI: https://francescopasseri.com
  * Text Domain: fp-newspaper
@@ -20,7 +20,7 @@ defined('ABSPATH') || exit;
 
 // Costanti del plugin (protette da ridefinizione)
 if (!defined('FP_NEWSPAPER_VERSION')) {
-    define('FP_NEWSPAPER_VERSION', '1.0.0');
+    define('FP_NEWSPAPER_VERSION', '1.6.0');
 }
 if (!defined('FP_NEWSPAPER_FILE')) {
     define('FP_NEWSPAPER_FILE', __FILE__);
