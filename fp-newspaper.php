@@ -35,22 +35,35 @@ if (!defined('FP_NEWSPAPER_BASENAME')) {
     define('FP_NEWSPAPER_BASENAME', plugin_basename(__FILE__));
 }
 
-// Autoload PSR-4 via Composer
+// Autoload PSR-4 via Composer o fallback
 $autoload_path = FP_NEWSPAPER_DIR . 'vendor/autoload.php';
 if (file_exists($autoload_path)) {
     require_once $autoload_path;
 } else {
-    add_action('admin_notices', function() {
-        if (!current_user_can('activate_plugins')) {
+    // Autoloader di fallback PSR-4 (funziona senza Composer)
+    spl_autoload_register(function ($class) {
+        // Namespace base del plugin
+        $prefix = 'FPNewspaper\\';
+        $base_dir = FP_NEWSPAPER_DIR . 'src/';
+        
+        // Verifica se la classe usa il namespace del plugin
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            // Namespace diverso, non gestito da questo autoloader
             return;
         }
-        echo '<div class="notice notice-error"><p>';
-        echo '<strong>' . esc_html__('FP Newspaper:', 'fp-newspaper') . '</strong> ';
-        echo esc_html__('Esegui', 'fp-newspaper') . ' <code>composer install</code> ';
-        echo esc_html__('nella cartella del plugin.', 'fp-newspaper');
-        echo '</p></div>';
+        
+        // Ottieni il nome della classe relativo
+        $relative_class = substr($class, $len);
+        
+        // Sostituisci namespace separators con directory separators
+        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+        
+        // Carica il file se esiste
+        if (file_exists($file)) {
+            require_once $file;
+        }
     });
-    return;
 }
 
 // Inizializza il plugin
